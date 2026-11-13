@@ -1,0 +1,11 @@
+node_modules
+pnpm-lock.yaml
+.next
+.expo
+.turbo
+dist
+coverage
+apps/mobile/ios
+apps/mobile/android
+CLAUDE.md
+**/AGENTS.md
