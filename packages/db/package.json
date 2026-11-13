@@ -4,16 +4,28 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./env": "./src/env.ts"
   },
   "scripts": {
+    "check": "node --disable-warning=ExperimentalWarning src/scripts/check.ts",
+    "generate": "drizzle-kit generate",
+    "migrate": "node --disable-warning=ExperimentalWarning src/scripts/migrate.ts",
+    "seed": "node --disable-warning=ExperimentalWarning src/scripts/seed.ts",
+    "studio": "drizzle-kit studio",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.4",
+    "pg": "^8.23.1"
   },
   "devDependencies": {
     "@repo/config-eslint": "workspace:*",
     "@repo/config-typescript": "workspace:*",
     "@types/node": "^22",
+    "@types/pg": "^8.23.1",
+    "drizzle-kit": "^0.31.11",
     "eslint": "^9.39.0",
     "typescript": "~6.0.3"
   }

@@ -1,3 +1,3 @@
-// Drizzle ORM schema and migrations (PostgreSQL) will live here.
-// Added in the next roadmap step; nothing connects to a database yet.
-export {};
+export { createDb, type Database } from "./client.ts";
+export { getDatabaseUrl, loadLocalEnv } from "./env.ts";
+export * as schema from "./schema/index.ts";
