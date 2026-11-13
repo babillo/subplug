@@ -1,6 +1,7 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "stream",
+  "globalEnv": ["DATABASE_URL", "VTPASS_*"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

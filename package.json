@@ -14,8 +14,11 @@
     "typecheck": "turbo run typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "db:up": "docker compose up -d",
-    "db:down": "docker compose down"
+    "db:check": "pnpm --filter @repo/db check",
+    "db:generate": "pnpm --filter @repo/db generate",
+    "db:migrate": "pnpm --filter @repo/db migrate",
+    "db:seed": "pnpm --filter @repo/db seed",
+    "db:studio": "pnpm --filter @repo/db studio"
   },
   "devDependencies": {
     "prettier": "^3.10.1",
