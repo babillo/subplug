@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Environment files: NEVER commit secrets. Only .env.example is tracked.
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+
+# Build output and caches
+.next/
+out/
+dist/
+build/
+coverage/
+.turbo/
+*.tsbuildinfo
+next-env.d.ts
+
+# Expo
+.expo/
+web-build/
+expo-env.d.ts
+apps/mobile/ios/
+apps/mobile/android/
+
+# Logs and OS files
+*.log
+.DS_Store
+*.pem
