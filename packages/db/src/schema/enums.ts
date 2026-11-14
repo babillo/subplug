@@ -22,3 +22,9 @@ export const fundingStatus = pgEnum("funding_status", ["credited", "rejected"]);
 export const productCategory = pgEnum("product_category", ["airtime", "data"]);
 
 export const orderStatus = pgEnum("order_status", ["pending", "success", "failed"]);
+
+/** Where a one-time code was sent. */
+export const otpChannel = pgEnum("otp_channel", ["sms", "email"]);
+
+/** What a one-time code is for. A code only works for its own purpose. */
+export const otpPurpose = pgEnum("otp_purpose", ["sign_in", "pin_reset"]);

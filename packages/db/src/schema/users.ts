@@ -1,16 +1,26 @@
 import { sql } from "drizzle-orm";
-import { bigint, check, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { bigint, check, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 import { userStatus, userTier } from "./enums.ts";
 
 export const users = pgTable("users", {
   id: uuid().primaryKey().defaultRandom(),
   fullName: text().notNull(),
-  // Login details arrive with auth (roadmap step 5); unique when present.
+  /** Lower-case email; unique when present. Needed for funding accounts (Monnify). */
   email: text().unique(),
+  /** Nigerian mobile number as 0XXXXXXXXXX; unique when present. */
   phone: text().unique(),
+  /** Set when the customer proves they own it with a one-time code. */
+  phoneVerifiedAt: timestamp({ withTimezone: true }),
+  emailVerifiedAt: timestamp({ withTimezone: true }),
   tier: userTier().notNull().default("regular"),
   status: userStatus().notNull().default("active"),
+  /** bcrypt hash of the 4-digit transaction PIN. Null until the customer sets one. */
+  pinHash: text(),
+  /** Wrong PINs in a row. Reset to 0 by a correct PIN or a PIN reset. */
+  pinFailedAttempts: integer().notNull().default(0),
+  /** Set after 5 wrong PINs: purchases are blocked until the PIN is reset with a one-time code. */
+  pinLockedAt: timestamp({ withTimezone: true }),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
