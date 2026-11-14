@@ -23,7 +23,10 @@ export interface OrderResponseBody {
   message: string;
 }
 
-function customerMessage(order: Order): string {
+/** A plain-words line for the customer about an order. */
+export function customerMessage(
+  order: Pick<Order, "status" | "providerCode" | "amountKobo">,
+): string {
   if (order.status === "success") return "Purchase successful.";
   if (order.status === "pending") {
     return "Your purchase is processing. We'll update it shortly; if it fails, you'll be refunded automatically.";
