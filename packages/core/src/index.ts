@@ -22,3 +22,9 @@ export {
 } from "./funding/monnify/gateway.ts";
 export * from "./funding/types.ts";
 export * from "./funding/fees.ts";
+export * from "./auth/auth.ts";
+export * from "./auth/errors.ts";
+export * from "./auth/http.ts";
+export { checkPinFormat, hashPin, PIN_MAX_ATTEMPTS } from "./auth/pin.ts";
+export * from "./auth/senders.ts";
+export * from "./auth/types.ts";
