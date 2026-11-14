@@ -50,7 +50,7 @@ A wallet-based VTU (virtual top-up) platform for Nigeria. Users fund a wallet by
   - Crediting always re-asks Monnify for the paid amount and account; the webhook's own amount is never used. Monnify's sandbox may not sign webhooks: unsigned ones are accepted in sandbox only.
   - **Funding fee:** flat ₦50 per deposit, waived on deposits of ₦50 or less (placeholder; one place to change: `packages/core/src/funding/fees.ts`). Stored as `funding_events.fee_kobo`; the wallet is credited amount − fee.
   - Business: Monnify account exists under the owner's CAC "M-SALMAN VENTURES"; address verification pending, so sandbox/test mode only for now.
-  - Verified on the laptop: reserving accounts works (sandbox returned Sterling + Wema numbers; account name shown as "See", Monnify shortens names). Not yet verified: a sandbox payment being credited. Sandbox accounts only receive payments from Monnify's payment simulator (websim.sdk.monnify.com), not real bank transfers. The transactions-list format used by `funding:reconcile` (`responseBody.content[].transactionReference`) matches how Monnify's own MCP server reads it.
+  - Verified on the laptop with the real Monnify sandbox: reserving accounts (Sterling + Wema numbers; account name shown as "See", Monnify shortens names) and crediting a payment end to end via `funding:reconcile` (₦5,000 simulator payment → ₦4,950 credited after the ₦50 fee). Sandbox accounts only receive payments from Monnify's payment simulator (websim.sdk.monnify.com), never real bank transfers. Not yet verified: a real Monnify webhook reaching us (needs a public URL; comes with deployment).
 
 ## Env vars (never commit real values)
 ```
@@ -89,11 +89,11 @@ ALLOW_TEST_AUTH=     # TEMPORARY test sign-in for /api/orders until auth (step 5
 - Never push to main,  work on staging/preview branch and ask to open PR
 
 ## Roadmap
-1. Monorepo setup + DB + VTpass adapter (sandbox) ← **start here**
-2. Wallet ledger core (credit/debit, tests)
-3. Wallet funding (virtual account + webhook, test mode)
-4. Purchase flow: data + airtime, pending re-check, auto-refund
-5. Auth (phone/email OTP) + transaction PIN
+1. Monorepo setup + DB + VTpass adapter (sandbox) ✅
+2. Wallet ledger core (credit/debit, tests) ✅
+3. Wallet funding (virtual account + webhook, test mode) ✅ (Monnify sandbox; webhook untested against real Monnify until deployed)
+4. Purchase flow: data + airtime, pending re-check, auto-refund ✅ (temporary test sign-in; PIN comes with step 5)
+5. Auth (phone/email OTP) + transaction PIN ← **next**
 6. Web dashboard + admin panel
 7. Expo mobile app
 8. Hardening: rate limits, admin 2FA, monitoring
