@@ -7,3 +7,4 @@ export {
   VtpassAdapter,
 } from "./providers/vtpass/adapter.ts";
 export { generateRequestId, lagosTimestamp } from "./providers/vtpass/request-id.ts";
+export * from "./wallet/wallet.ts";

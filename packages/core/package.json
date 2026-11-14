@@ -12,15 +12,17 @@
     "test:integration": "vitest run integration",
     "vtpass:check": "node --disable-warning=ExperimentalWarning src/scripts/vtpass-check.ts",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "seed": "node --disable-warning=ExperimentalWarning src/scripts/seed.ts"
   },
   "dependencies": {
-    "@repo/shared": "workspace:*"
+    "@repo/db": "workspace:*",
+    "@repo/shared": "workspace:*",
+    "drizzle-orm": "^0.45.4"
   },
   "devDependencies": {
     "@repo/config-eslint": "workspace:*",
     "@repo/config-typescript": "workspace:*",
-    "@repo/db": "workspace:*",
     "@types/node": "^22",
     "eslint": "^9.39.0",
     "typescript": "~6.0.3",
