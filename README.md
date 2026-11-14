@@ -99,16 +99,20 @@ pnpm dev:mobile
 
 All of these use `DATABASE_URL`.
 
-| Command            | What it does                                                       |
-| ------------------ | ------------------------------------------------------------------ |
-| `pnpm db:check`    | Connects and prints the database name and Postgres version         |
-| `pnpm db:generate` | Turns changes in `packages/db/src/schema` into a new SQL migration |
-| `pnpm db:migrate`  | Applies new migrations to the database (safe to run repeatedly)    |
-| `pnpm db:seed`     | Fills the database with test data                                  |
-| `pnpm db:studio`   | Opens Drizzle Studio, a browser view of your tables                |
+| Command            | What it does                                                         |
+| ------------------ | -------------------------------------------------------------------- |
+| `pnpm db:check`    | Connects and prints the database name and Postgres version           |
+| `pnpm db:generate` | Turns changes in `packages/db/src/schema` into a new SQL migration   |
+| `pnpm db:migrate`  | Applies new migrations to the database (safe to run repeatedly)      |
+| `pnpm db:seed`     | Adds test data: a test user with ₦5,000, MTN/Airtel airtime and data |
+| `pnpm db:studio`   | Opens Drizzle Studio, a browser view of your tables                  |
 
 The usual flow after editing the schema: `pnpm db:generate`, review the SQL file it created in
 `packages/db/migrations`, then `pnpm db:migrate`. Commit the migration files.
+
+`pnpm db:seed` is safe to run repeatedly. It fetches real data plan codes from the VTpass sandbox,
+so it needs the VTpass keys; without them it adds everything except the data plans. The test user
+is `seed-user@example.test`. Its ₦5,000 goes in as a normal ledger credit, once.
 
 ## Tests and checks
 
@@ -120,6 +124,29 @@ The usual flow after editing the schema: `pnpm db:generate`, review the SQL file
 | `pnpm format`       | Formats every file with Prettier            |
 | `pnpm format:check` | Reports files that aren't formatted         |
 | `pnpm build`        | Production build                            |
+
+### Database tests (wallet ledger)
+
+The wallet tests need a real PostgreSQL, because what they test (row locking when two purchases
+happen at once) only exists in a real database. They **delete all data** in that database, so they
+use `TEST_DATABASE_URL`, never `DATABASE_URL`, and refuse to run if the two are the same. Without
+`TEST_DATABASE_URL`, `pnpm test` skips them and prints a warning.
+
+- **Laptop:** create a separate Neon branch called `test` in "SubPlug project" and put its
+  connection string in `.env.local` as `TEST_DATABASE_URL`. The tests create the tables themselves.
+- **Cloud:** install a throwaway local PostgreSQL in the session and point `TEST_DATABASE_URL` at it:
+
+```bash
+apt-get install -y postgresql && service postgresql start
+```
+
+```bash
+su postgres -c "psql -c \"create role subplug_test login password 'subplug_test'\"" && su postgres -c "createdb -O subplug_test subplug_test"
+```
+
+```bash
+TEST_DATABASE_URL=postgres://subplug_test:subplug_test@localhost:5432/subplug_test pnpm test
+```
 
 `pnpm test` also runs the VTpass **sandbox** tests (real HTTP, no real money) when `VTPASS_API_KEY`
 is set, e.g. in `.env.local`; otherwise they're skipped. To run only those:

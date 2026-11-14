@@ -50,6 +50,7 @@ A wallet-based VTU (virtual top-up) platform for Nigeria. Users fund a wallet by
 ## Env vars (never commit real values)
 ```
 DATABASE_URL=
+TEST_DATABASE_URL=   # separate DB for tests (they wipe it); never the same as DATABASE_URL
 VTPASS_BASE_URL=https://sandbox.vtpass.com/api
 VTPASS_API_KEY=
 VTPASS_PUBLIC_KEY=
