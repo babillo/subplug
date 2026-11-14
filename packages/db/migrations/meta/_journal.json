@@ -36,6 +36,13 @@
       "when": 1794668029079,
       "tag": "0004_auth_and_pin",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794670128840,
+      "tag": "0005_user_role",
+      "breakpoints": true
     }
   ]
 }
