@@ -119,7 +119,9 @@ export async function settleOrder(
         amountKobo: order.amountKobo,
         reason: "refund",
         referenceId: order.id,
-        description: `Refund: ${result.message}`.slice(0, 500),
+        // Plain words for the customer's statement; the provider's own message is kept on the
+        // order (providerMessage) for admins.
+        description: `Refund: purchase for ${order.recipientPhone} didn’t go through`,
       });
     }
 
