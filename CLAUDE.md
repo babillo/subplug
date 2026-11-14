@@ -45,7 +45,10 @@ A wallet-based VTU (virtual top-up) platform for Nigeria. Users fund a wallet by
     - Products are off by default. Enable each one in Profile → **Product Settings** (sandbox and live separately), else code `028`.
     - Code `019` "likely duplicate": any new purchase to the **same recipient within 15 seconds**, whatever the service (docs say 30s, same service). Not charged → failed → refund. The purchase flow should tell customers to wait ~15s, not just show "failed".
     - The status mapping and the codes still unconfirmed are documented in `packages/core/src/providers/vtpass/status-map.ts`.
-- **Wallet funding:** Monnify or Paystack virtual accounts (decide later; also build behind an adapter).
+- **Wallet funding:** **Monnify sandbox now** (reserved accounts, behind the `FundingGateway` adapter in `packages/core/src/funding/`); **Paystack later** as a second adapter. Flutterwave ruled out (fees). Going live with any gateway needs a CAC-registered business + KYC.
+  - Monnify's docs site blocks automated readers. Endpoints and signing were confirmed from Monnify's official Node library (`monnify-nodejs-lib` on npm): login `POST /api/v1/auth/login` (Basic apiKey:secretKey), reserve `POST /api/v2/bank-transfer/reserved-accounts` (needs customer BVN or NIN; we never store it), verify `GET /api/v2/transactions/{ref}`, webhook header `monnify-signature` = HMAC-SHA512 of the body with the secret key. Amounts are naira (number or text) → `decimalToKobo()`.
+  - Crediting always re-asks Monnify for the paid amount and account; the webhook's own amount is never used. Monnify's sandbox may not sign webhooks: unsigned ones are accepted in sandbox only.
+  - Who pays Monnify's fee: for now we credit the full amount the customer sent (we absorb the fee). Undecided.
 
 ## Env vars (never commit real values)
 ```
@@ -55,6 +58,10 @@ VTPASS_BASE_URL=https://sandbox.vtpass.com/api
 VTPASS_API_KEY=
 VTPASS_PUBLIC_KEY=
 VTPASS_SECRET_KEY=
+MONNIFY_BASE_URL=https://sandbox.monnify.com
+MONNIFY_API_KEY=
+MONNIFY_SECRET_KEY=
+MONNIFY_CONTRACT_CODE=
 ALLOW_TEST_AUTH=     # TEMPORARY test sign-in for /api/orders until auth (step 5); never in production
 ```
 `.env*` files are git-ignored. Keep a `.env.example` with empty values.
