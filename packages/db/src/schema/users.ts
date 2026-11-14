@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { bigint, check, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
-import { userStatus, userTier } from "./enums.ts";
+import { userRole, userStatus, userTier } from "./enums.ts";
 
 export const users = pgTable("users", {
   id: uuid().primaryKey().defaultRandom(),
@@ -15,6 +15,8 @@ export const users = pgTable("users", {
   emailVerifiedAt: timestamp({ withTimezone: true }),
   tier: userTier().notNull().default("regular"),
   status: userStatus().notNull().default("active"),
+  /** "admin" only via `pnpm admin:grant` (no self sign-up as admin). */
+  role: userRole().notNull().default("customer"),
   /** bcrypt hash of the 4-digit transaction PIN. Null until the customer sets one. */
   pinHash: text(),
   /** Wrong PINs in a row. Reset to 0 by a correct PIN or a PIN reset. */

@@ -28,3 +28,6 @@ export const otpChannel = pgEnum("otp_channel", ["sms", "email"]);
 
 /** What a one-time code is for. A code only works for its own purpose. */
 export const otpPurpose = pgEnum("otp_purpose", ["sign_in", "pin_reset"]);
+
+/** What a user may do. Admins can see everyone and change prices/balances (all audited). */
+export const userRole = pgEnum("user_role", ["customer", "admin"]);

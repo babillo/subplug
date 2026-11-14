@@ -75,6 +75,8 @@ OTP_SENDER=console   # "console" prints sign-in codes in the server terminal (de
 - Sessions: own implementation (no auth library). Random 256-bit token; only its SHA-256 is stored; 30 days. Web: HttpOnly `session` cookie (SameSite=Lax, Secure in prod) + Origin check on state-changing cookie requests. Mobile: `Authorization: Bearer`, token returned in the sign-in body only with header `x-client: mobile`.
 - Transaction PIN: 4 digits (no 0000/1234-style), bcrypt via `bcryptjs` (works on Cloudflare Workers). 5 wrong tries (counted in the DB under a row lock) locks purchases until reset with a `pin_reset` code. `buy()` checks the PIN before any money moves.
 - Seed user dev PIN: `1357` (test data only).
+- Admins: `users.role` = `admin`, granted only with `pnpm admin:grant <email|phone>` (laptop, audited; no web route). Admin API under `/api/admin/*`; every change audited in the same transaction. Admin 2FA comes in step 8.
+- SMS provider: BulkSMSNigeria was cheapest on paper (₦6.49) but has poor reviews (delivery complaints) → rejected. Shortlist Termii (OTP/DND route, price on request) and VTpass Messaging; test delivery to DND numbers on MTN/Airtel/Glo before committing.
 
 ## Setup
 - I run Claude Code in two places, both on this GitHub repo: a **cloud environment** and my **desktop**.
@@ -102,7 +104,7 @@ OTP_SENDER=console   # "console" prints sign-in codes in the server terminal (de
 3. Wallet funding (virtual account + webhook, test mode) ✅ (Monnify sandbox; webhook untested against real Monnify until deployed)
 4. Purchase flow: data + airtime, pending re-check, auto-refund ✅
 5. Auth (phone/email OTP) + transaction PIN ✅ (dev code sender; real SMS/email provider still to pick)
-6. Web dashboard + admin panel
+6. Web dashboard + admin panel: 6a backend API ✅ (customer views, admin actions, audit); 6b customer UI (moodboard from Dribbble/Behance-style references, owner redesigns in Figma later); 6c admin UI
 7. Expo mobile app
 8. Hardening: rate limits, admin 2FA, monitoring
 9. Phase 2: cable, electricity, reseller tier, referrals

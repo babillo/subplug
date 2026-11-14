@@ -247,6 +247,44 @@ curl -X POST http://localhost:3000/api/orders -H "content-type: application/json
   `attemptsRemaining`), `409` no PIN set yet, `423` PIN locked, `429` same number within 15 seconds
   (with `Retry-After`).
 
+## Customer and admin API
+
+Signed-in customers (cookie on the web, `Authorization: Bearer` on mobile):
+
+| Route                                         | What it returns                             |
+| --------------------------------------------- | ------------------------------------------- |
+| `GET /api/products`                           | What they can buy, at **their** tier price  |
+| `GET /api/wallet`                             | Balance and funding account numbers         |
+| `GET /api/wallet/transactions?limit=&offset=` | Wallet statement, newest first              |
+| `GET /api/orders?status=&limit=&offset=`      | Their orders, newest first                  |
+| `GET /api/orders/:id`                         | One of their orders (404 for anyone else's) |
+
+**Admins.** Make the first admin from the laptop (they must have signed up first). There is no web
+route for this, on purpose:
+
+```bash
+pnpm admin:grant 08031234567
+```
+
+Every admin change is written to the audit log with before/after values.
+
+| Route                                   | What it does                                                           |
+| --------------------------------------- | ---------------------------------------------------------------------- |
+| `GET /api/admin/users?search=`          | Customers with balances (search name, email or phone)                  |
+| `GET /api/admin/users/:id`              | One customer: balance, PIN state, funding accounts                     |
+| `POST /api/admin/users/:id/wallet`      | Manual credit/debit: `{ direction, amountKobo, note, idempotencyKey }` |
+| `POST /api/admin/users/:id/status`      | Suspend/reactivate: `{ status, note }`                                 |
+| `GET /api/admin/orders?status=&stuck=1` | All orders; `stuck=1` = pending over 24 hours                          |
+| `POST /api/admin/orders/:id/settle`     | Settle a stuck order: `{ outcome, note }` (`failed` refunds once)      |
+| `GET /api/admin/products`               | All products with provider cost and tier prices                        |
+| `POST /api/admin/products/:id/price`    | `{ tier, priceKobo }` (data) or `{ tier, discountBps }` (airtime)      |
+| `POST /api/admin/products/:id/status`   | Turn a product on/off: `{ active, note? }`                             |
+| `GET /api/admin/audit-log`              | Every admin change, newest first                                       |
+
+A data price below what VTpass charges is refused unless the request includes
+`"allowBelowCost": true`. Manual credits/debits need a note and an `idempotencyKey`: sending the
+same key again (double-click, retry) returns the first result and moves no money.
+
 ## VTpass sandbox check
 
 Prints the sandbox wallet balance and the MTN data plans, to confirm the keys work:

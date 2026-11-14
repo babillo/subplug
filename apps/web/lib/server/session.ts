@@ -3,7 +3,7 @@
 // - Mobile: the app sends "Authorization: Bearer <token>".
 // Cookie-signed-in requests that change something must come from our own site (Origin check), so
 // another website can't submit forms on the customer's behalf.
-import type { User } from "@repo/core";
+import { type User } from "@repo/core";
 
 import { getServices } from "./services";
 
@@ -83,4 +83,20 @@ export function userView(user: User) {
     hasPin: user.pinHash !== null,
     pinLocked: user.pinLockedAt !== null,
   };
+}
+
+/**
+ * The signed-in admin, or a ready-made 401/403 response. Usage:
+ *   const admin = await requireAdmin(request); if (admin instanceof Response) return admin;
+ */
+export async function requireAdmin(request: Request): Promise<User | Response> {
+  const user = await getSignedInUser(request);
+  if (!user) return unauthorized();
+  if (user.role !== "admin") {
+    return Response.json(
+      { error: { code: "forbidden", message: "Admins only." } },
+      { status: 403 },
+    );
+  }
+  return user;
 }

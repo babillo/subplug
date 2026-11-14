@@ -23,7 +23,8 @@
     "orders:recheck": "pnpm --filter @repo/core orders:recheck",
     "orders:try": "pnpm --filter @repo/core orders:try",
     "funding:account": "pnpm --filter @repo/core funding:account",
-    "funding:reconcile": "pnpm --filter @repo/core funding:reconcile"
+    "funding:reconcile": "pnpm --filter @repo/core funding:reconcile",
+    "admin:grant": "pnpm --filter @repo/core admin:grant"
   },
   "devDependencies": {
     "prettier": "^3.10.1",
