@@ -121,6 +121,23 @@ The usual flow after editing the schema: `pnpm db:generate`, review the SQL file
 | `pnpm format:check` | Reports files that aren't formatted         |
 | `pnpm build`        | Production build                            |
 
+`pnpm test` also runs the VTpass **sandbox** tests (real HTTP, no real money) when `VTPASS_API_KEY`
+is set, e.g. in `.env.local`; otherwise they're skipped. To run only those:
+
+```bash
+pnpm --filter @repo/core test:integration
+```
+
+## VTpass sandbox check
+
+Prints the sandbox wallet balance and the MTN data plans, to confirm the keys work:
+
+```bash
+pnpm vtpass:check
+```
+
+It never prints your keys. If a setting is missing it names the variable, not its value.
+
 Watch mode while writing tests in `packages/core`:
 
 ```bash
