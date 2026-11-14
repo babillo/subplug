@@ -28,3 +28,5 @@ export * from "./auth/http.ts";
 export { checkPinFormat, hashPin, PIN_MAX_ATTEMPTS } from "./auth/pin.ts";
 export * from "./auth/senders.ts";
 export * from "./auth/types.ts";
+export * from "./account/account.ts";
+export * from "./admin/admin.ts";
