@@ -1,5 +1,6 @@
 // Drizzle table definitions. All money columns are integer kobo (₦1 = 100 kobo).
 export * from "./audit.ts";
+export * from "./auth.ts";
 export * from "./catalog.ts";
 export * from "./enums.ts";
 export * from "./funding.ts";

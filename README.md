@@ -189,7 +189,7 @@ How a payment is credited safely: the webhook signature is checked, then Monnify
 how much was paid and into which account. **Only Monnify's answer counts**; the amount in the
 webhook itself is ignored. The customer's BVN/NIN is sent to Monnify and never stored by us.
 
-API (temporary test sign-in, see "The orders API" below):
+API (signed-in customers, see "Signing in" below):
 
 - `POST /api/wallet/funding-accounts` with `{ "bvn": "..." }` or `{ "nin": "..." }` creates the
   account numbers. `GET` lists them.
@@ -209,22 +209,43 @@ so run them on the laptop after `pnpm db:migrate` and `pnpm db:seed`. `orders:re
 run any time; it will be scheduled on Cloudflare later. Orders pending for over 24 hours are listed
 for a human to check, never refunded automatically.
 
+## Signing in (API)
+
+Customers sign in with a one-time code sent to their phone or email; no passwords. In development
+the code is **printed in the terminal running `pnpm dev`** (`OTP_SENDER=console`), no SMS needed.
+Set `AUTH_SECRET` in `.env.local` first (generate one with `openssl rand -hex 32`).
+
+1. `POST /api/auth/otp` with `{ "destination": "08031234567" }` (or an email). Then read the code
+   from the terminal.
+2. `POST /api/auth/sign-in` with `{ "destination", "code" }`. A new customer gets
+   `{ "status": "profile_required" }`; send the same request again with `fullName` and `email`
+   added (the code still works).
+3. Signed in: the web gets a secure `session` cookie. The mobile app sends header
+   `x-client: mobile` and also gets a `token`, which it sends back as `Authorization: Bearer …`.
+4. `POST /api/auth/pin` with `{ "pin": "2580" }` sets the 4-digit transaction PIN (to change it
+   later, add `currentPin`). Easy PINs like `0000` or `1234` are refused.
+
+Other routes: `GET /api/auth/me`, `POST /api/auth/sign-out`, `POST /api/auth/pin/reset-code` (sends
+a PIN-reset code) and `POST /api/auth/pin/reset` with `{ "code", "pin" }`. After **5 wrong PINs**,
+purchases are locked until the PIN is reset with a code.
+
+The seed user (`seed-user@example.test`, phone `08011111111`) has the dev PIN `1357`.
+
 ### The orders API
 
-`POST /api/orders` buys from the wallet. Until real sign-in exists it uses **temporary test
-sign-in**: set `ALLOW_TEST_AUTH=true` in `.env.local` and send the user's id in an
-`x-test-user-id` header. Production builds ignore this completely.
+`POST /api/orders` buys from the wallet. It needs a signed-in customer and their PIN:
 
 ```bash
-curl -X POST http://localhost:3000/api/orders -H "content-type: application/json" -H "x-test-user-id: USER_ID" -d '{"productId":"PRODUCT_ID","recipientPhone":"08011111111","faceValueKobo":10000,"clientReference":"tap-1"}'
+curl -X POST http://localhost:3000/api/orders -H "content-type: application/json" -H "authorization: Bearer TOKEN" -d '{"productId":"PRODUCT_ID","recipientPhone":"08011111111","faceValueKobo":10000,"clientReference":"tap-1","pin":"1357"}'
 ```
 
 - `faceValueKobo`: airtime only, in kobo (₦100 = `10000`). Data plans have a fixed price.
 - `clientReference`: a random id per "Buy" tap. Sending it again returns the same order
   (`duplicate: true`) instead of charging twice.
 - Answers: `201` new order (`success`, `pending`, or `failed` and already refunded), `200` repeated
-  tap, `400` invalid input, `401` not signed in, `402` balance too low, `429` same number within 15
-  seconds (with `Retry-After`).
+  tap, `400` invalid input, `401` not signed in, `402` balance too low, `403` wrong PIN (with
+  `attemptsRemaining`), `409` no PIN set yet, `423` PIN locked, `429` same number within 15 seconds
+  (with `Retry-After`).
 
 ## VTpass sandbox check
 

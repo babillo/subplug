@@ -37,7 +37,7 @@ export async function resetDatabase(db: Database): Promise<void> {
       await db.transaction(async (tx) => {
         await tx.execute(sql`set local lock_timeout = '15s'`);
         await tx.execute(sql`
-          truncate table audit_log, ledger_entries, funding_events, orders, prices, products,
+          truncate table audit_log, otp_codes, sessions, ledger_entries, funding_events, orders, prices, products,
             providers, wallets, users restart identity cascade
         `);
       });

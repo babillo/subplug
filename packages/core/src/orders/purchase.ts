@@ -36,6 +36,8 @@ export interface BuyInput {
   faceValueKobo?: Kobo;
   /** Id the app generates per "Buy" tap; a repeat returns the original order. */
   clientReference?: string;
+  /** The customer's 4-digit transaction PIN (CLAUDE.md rule 8). Checked before anything else. */
+  pin: string;
 }
 
 export interface BuyResult {
@@ -47,9 +49,16 @@ export interface BuyResult {
 /** VTpass rejects any new purchase to the same number within 15 seconds (code 019). */
 const SAME_RECIPIENT_GAP_SECONDS = 16;
 
-export function createPurchaseService(deps: { db: DbOrTx; getProvider: GetProvider }) {
+export function createPurchaseService(deps: {
+  db: DbOrTx;
+  getProvider: GetProvider;
+  /** Throws (wrong_pin, pin_locked, pin_not_set) unless the PIN is right: auth service's verifyPin. */
+  verifyPin: (userId: string, pin: string) => Promise<void>;
+}) {
   return {
     async buy(input: BuyInput): Promise<BuyResult> {
+      // The PIN comes first: a wrong or locked PIN means no order, no debit, no provider call.
+      await deps.verifyPin(input.userId, input.pin);
       const placed = await reserve(deps.db, input);
       if (placed.duplicate) return { order: placed.order, duplicate: true };
 
@@ -60,8 +69,11 @@ export function createPurchaseService(deps: { db: DbOrTx; getProvider: GetProvid
   };
 }
 
-/** Step 1 only: charge the wallet and create the pending order. Exposed for tests and recovery. */
-export async function placeOrder(db: DbOrTx, input: BuyInput): Promise<Order> {
+/**
+ * Step 1 only: charge the wallet and create the pending order. Exposed for tests and recovery;
+ * it does NOT check the PIN, so app code must go through createPurchaseService().buy().
+ */
+export async function placeOrder(db: DbOrTx, input: Omit<BuyInput, "pin">): Promise<Order> {
   return (await reserve(db, input)).order;
 }
 
@@ -145,7 +157,7 @@ function duplicateOf(order: Order): Reservation {
   return { order, duplicate: true, request: undefined as never };
 }
 
-async function reserve(db: DbOrTx, input: BuyInput): Promise<Reservation> {
+async function reserve(db: DbOrTx, input: Omit<BuyInput, "pin">): Promise<Reservation> {
   const recipientPhone = normaliseNigerianPhone(input.recipientPhone);
   if (!recipientPhone) {
     throw new PurchaseError("invalid_phone", "Enter a valid Nigerian phone number");

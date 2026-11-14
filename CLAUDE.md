@@ -50,7 +50,7 @@ A wallet-based VTU (virtual top-up) platform for Nigeria. Users fund a wallet by
   - Crediting always re-asks Monnify for the paid amount and account; the webhook's own amount is never used. Monnify's sandbox may not sign webhooks: unsigned ones are accepted in sandbox only.
   - **Funding fee:** flat ₦50 per deposit, waived on deposits of ₦50 or less (placeholder; one place to change: `packages/core/src/funding/fees.ts`). Stored as `funding_events.fee_kobo`; the wallet is credited amount − fee.
   - Business: Monnify account exists under the owner's CAC "M-SALMAN VENTURES"; address verification pending, so sandbox/test mode only for now.
-  - Verified on the laptop: reserving accounts works (sandbox returned Sterling + Wema numbers; account name shown as "See", Monnify shortens names). Not yet verified: a sandbox payment being credited. Sandbox accounts only receive payments from Monnify's payment simulator (websim.sdk.monnify.com), not real bank transfers. The transactions-list format used by `funding:reconcile` (`responseBody.content[].transactionReference`) matches how Monnify's own MCP server reads it.
+  - Verified on the laptop with the real Monnify sandbox: reserving accounts (Sterling + Wema numbers; account name shown as "See", Monnify shortens names) and crediting a payment end to end via `funding:reconcile` (₦5,000 simulator payment → ₦4,950 credited after the ₦50 fee). Sandbox accounts only receive payments from Monnify's payment simulator (websim.sdk.monnify.com), never real bank transfers. Not yet verified: a real Monnify webhook reaching us (needs a public URL; comes with deployment).
 
 ## Env vars (never commit real values)
 ```
@@ -64,9 +64,17 @@ MONNIFY_BASE_URL=https://sandbox.monnify.com
 MONNIFY_API_KEY=
 MONNIFY_SECRET_KEY=
 MONNIFY_CONTRACT_CODE=
-ALLOW_TEST_AUTH=     # TEMPORARY test sign-in for /api/orders until auth (step 5); never in production
+AUTH_SECRET=         # ≥32 random chars (openssl rand -hex 32); keys one-time code hashes
+OTP_SENDER=console   # "console" prints sign-in codes in the server terminal (dev only); SMS/email provider later
 ```
 `.env*` files are git-ignored. Keep a `.env.example` with empty values.
+
+## Auth (step 5)
+- Sign-in with one-time codes to a Nigerian phone or an email (no passwords): 6 digits, 10-minute expiry, 5 tries, 1 per minute and 5 per hour per destination; stored as an HMAC keyed with `AUTH_SECRET`. New customers also give full name (+ email when signing up by phone: Monnify needs it).
+- Codes go through an `OtpSender` (`packages/core/src/auth/`). Only `ConsoleOtpSender` exists (dev; refuses production). An SMS/email provider (e.g. Termii, Resend) is still to be chosen.
+- Sessions: own implementation (no auth library). Random 256-bit token; only its SHA-256 is stored; 30 days. Web: HttpOnly `session` cookie (SameSite=Lax, Secure in prod) + Origin check on state-changing cookie requests. Mobile: `Authorization: Bearer`, token returned in the sign-in body only with header `x-client: mobile`.
+- Transaction PIN: 4 digits (no 0000/1234-style), bcrypt via `bcryptjs` (works on Cloudflare Workers). 5 wrong tries (counted in the DB under a row lock) locks purchases until reset with a `pin_reset` code. `buy()` checks the PIN before any money moves.
+- Seed user dev PIN: `1357` (test data only).
 
 ## Setup
 - I run Claude Code in two places, both on this GitHub repo: a **cloud environment** and my **desktop**.
@@ -89,11 +97,11 @@ ALLOW_TEST_AUTH=     # TEMPORARY test sign-in for /api/orders until auth (step 5
 - Never push to main,  work on staging/preview branch and ask to open PR
 
 ## Roadmap
-1. Monorepo setup + DB + VTpass adapter (sandbox) ← **start here**
-2. Wallet ledger core (credit/debit, tests)
-3. Wallet funding (virtual account + webhook, test mode)
-4. Purchase flow: data + airtime, pending re-check, auto-refund
-5. Auth (phone/email OTP) + transaction PIN
+1. Monorepo setup + DB + VTpass adapter (sandbox) ✅
+2. Wallet ledger core (credit/debit, tests) ✅
+3. Wallet funding (virtual account + webhook, test mode) ✅ (Monnify sandbox; webhook untested against real Monnify until deployed)
+4. Purchase flow: data + airtime, pending re-check, auto-refund ✅
+5. Auth (phone/email OTP) + transaction PIN ✅ (dev code sender; real SMS/email provider still to pick)
 6. Web dashboard + admin panel
 7. Expo mobile app
 8. Hardening: rate limits, admin 2FA, monitoring

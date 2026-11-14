@@ -29,6 +29,13 @@
       "when": 1794664360970,
       "tag": "0003_funding_fee",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794668029079,
+      "tag": "0004_auth_and_pin",
+      "breakpoints": true
     }
   ]
 }

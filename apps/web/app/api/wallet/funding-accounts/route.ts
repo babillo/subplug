@@ -9,7 +9,8 @@ import {
 } from "@repo/core";
 
 import { getServices } from "@/lib/server/services";
-import { getTestUserId, testAuthEnabled } from "@/lib/server/test-auth";
+import { readJson, str } from "@/lib/server/responses";
+import { getSignedInUser, unauthorized } from "@/lib/server/session";
 
 type Account = { bankName: string; accountNumber: string; accountName: string };
 const view = (accounts: Account[]) =>
@@ -19,20 +20,6 @@ const view = (accounts: Account[]) =>
     accountName,
   }));
 
-function unauthorized() {
-  return Response.json(
-    {
-      error: {
-        code: "unauthorized",
-        message: testAuthEnabled()
-          ? "Send an x-test-user-id header with your user id."
-          : "Sign-in isn't available yet.",
-      },
-    },
-    { status: 401 },
-  );
-}
-
 const STATUS: Record<FundingError["code"], number> = {
   id_required: 400,
   email_required: 400,
@@ -41,32 +28,23 @@ const STATUS: Record<FundingError["code"], number> = {
 };
 
 export async function GET(request: Request) {
-  const userId = getTestUserId(request);
-  if (!userId) return unauthorized();
-  const accounts = await listFundingAccounts(getServices().db, userId);
+  const user = await getSignedInUser(request);
+  if (!user) return unauthorized();
+  const accounts = await listFundingAccounts(getServices().db, user.id);
   return Response.json({ accounts: view(accounts) });
 }
 
 export async function POST(request: Request) {
-  const userId = getTestUserId(request);
-  if (!userId) return unauthorized();
-
-  let body: Record<string, unknown> = {};
-  try {
-    const parsed: unknown = await request.json();
-    if (typeof parsed === "object" && parsed !== null) body = parsed as Record<string, unknown>;
-  } catch {
-    // treated as empty: the id check below explains what's missing
-  }
-  const bvn = typeof body.bvn === "string" ? body.bvn : undefined;
-  const nin = typeof body.nin === "string" ? body.nin : undefined;
+  const user = await getSignedInUser(request);
+  if (!user) return unauthorized();
+  const body = (await readJson(request)) ?? {};
 
   try {
     const { db, fundingGateway } = getServices();
     const { accounts, created } = await createFundingAccounts(db, fundingGateway(), {
-      userId,
-      bvn,
-      nin,
+      userId: user.id,
+      bvn: str(body.bvn),
+      nin: str(body.nin),
     });
     return Response.json({ accounts: view(accounts), created }, { status: created ? 201 : 200 });
   } catch (error) {
