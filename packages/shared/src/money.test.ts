@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { formatNaira, nairaToKoboInput } from "./money";
+import {
+  adminNairaToKobo,
+  bpsToPercent,
+  formatNaira,
+  nairaToKoboInput,
+  percentToBps,
+} from "./money";
 
 describe("formatNaira", () => {
   it("formats kobo as naira with separators", () => {
@@ -22,5 +28,38 @@ describe("nairaToKoboInput", () => {
   it("rejects anything that isn't a whole naira amount", () => {
     for (const bad of ["", "abc", "10.50", "-5", "0", "1e3"])
       expect(nairaToKoboInput(bad)).toBeNull();
+  });
+});
+
+describe("adminNairaToKobo", () => {
+  it.each([
+    ["1500", 150_000],
+    ["1,500.5", 150_050],
+    ["0.01", 1],
+    [" 20.05 ", 2_005],
+  ])("%s → %s kobo", (text, kobo) => {
+    expect(adminNairaToKobo(text)).toBe(kobo);
+  });
+  it.each(["", "0", "0.00", "-5", "1.234", "1e3", "abc", "1..2", "99999999999999"])(
+    "rejects %j",
+    (text) => {
+      expect(adminNairaToKobo(text)).toBeNull();
+    },
+  );
+});
+
+describe("percentToBps / bpsToPercent", () => {
+  it.each([
+    ["1", 100],
+    ["2.5", 250],
+    ["0", 0],
+    ["0.05", 5],
+    ["99.99", 9_999],
+  ])("%s%% → %s bps", (text, bps) => {
+    expect(percentToBps(text)).toBe(bps);
+    expect(bpsToPercent(bps)).toBe(text);
+  });
+  it.each(["100", "-1", "1.234", "abc", ""])("rejects %j", (text) => {
+    expect(percentToBps(text)).toBeNull();
   });
 });

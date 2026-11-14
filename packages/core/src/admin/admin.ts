@@ -316,6 +316,7 @@ export async function getUserDetail(db: DbOrTx, userId: string) {
   const [row] = await db
     .select({
       ...userColumns,
+      walletId: wallets.id,
       hasPin: sql<boolean>`${users.pinHash} is not null`,
       pinLocked: sql<boolean>`${users.pinLockedAt} is not null`,
       phoneVerifiedAt: users.phoneVerifiedAt,
