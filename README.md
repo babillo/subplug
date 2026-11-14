@@ -95,6 +95,18 @@ pnpm dev
 pnpm dev:mobile
 ```
 
+The app talks only to our backend (never to VTpass or Monnify), so `pnpm dev` must be running too,
+and the phone must be able to reach it:
+
+1. Phone and laptop on the same Wi-Fi.
+2. Find the laptop's Wi-Fi address (Windows: `ipconfig` → "IPv4 Address", e.g. `192.168.1.20`).
+3. Copy `apps/mobile/.env.example` to `apps/mobile/.env.local` and set
+   `EXPO_PUBLIC_API_URL=http://192.168.1.20:3000` (your address). Restart `pnpm dev:mobile` after
+   changing it. If Windows asks whether Node.js may use the network, allow it on private networks.
+
+`EXPO_PUBLIC_*` values are built into the app: never put a key or password there. The sign-in
+token is kept in the phone's secure storage (Keychain / Keystore) and deleted on sign-out.
+
 ## Database scripts
 
 All of these use `DATABASE_URL`.
