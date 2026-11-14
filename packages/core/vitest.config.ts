@@ -12,5 +12,7 @@ export default defineConfig({
     globalSetup: ["src/test/global-setup.ts"],
     // Database test files share one database and wipe it between tests, so run files one at a time.
     fileParallelism: false,
+    // Database setup steps (wiping tables) can take a while against a remote database.
+    hookTimeout: 60_000,
   },
 });

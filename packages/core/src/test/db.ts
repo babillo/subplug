@@ -24,10 +24,35 @@ export function openTestDb(): { db: Database; close: () => Promise<void> } {
   return { db, close };
 }
 
-/** Empties every table (fast, and resets nothing else). Call in beforeEach. */
+/**
+ * Empties every table. Call in beforeEach.
+ * Retries on a deadlock or lock timeout: if a previous test failed or timed out, its queries can
+ * still be finishing in the background, and wiping tables needs every table to itself.
+ */
 export async function resetDatabase(db: Database): Promise<void> {
-  await db.execute(sql`
-    truncate table audit_log, ledger_entries, funding_events, orders, prices, products,
-      providers, wallets, users restart identity cascade
-  `);
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await db.transaction(async (tx) => {
+        await tx.execute(sql`set local lock_timeout = '15s'`);
+        await tx.execute(sql`
+          truncate table audit_log, ledger_entries, funding_events, orders, prices, products,
+            providers, wallets, users restart identity cascade
+        `);
+      });
+      return;
+    } catch (error) {
+      const code = pgErrorCode(error);
+      const retryable = code === "40P01" /* deadlock */ || code === "55P03"; /* lock timeout */
+      if (!retryable || attempt >= 3) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 1_000 * attempt));
+    }
+  }
+}
+
+function pgErrorCode(error: unknown): string | undefined {
+  for (let e: unknown = error; e; e = (e as { cause?: unknown }).cause) {
+    const code = (e as { code?: unknown }).code;
+    if (typeof code === "string") return code;
+  }
+  return undefined;
 }

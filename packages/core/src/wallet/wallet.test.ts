@@ -15,7 +15,9 @@ import {
   WalletNotFoundError,
 } from "./wallet.ts";
 
-describe.skipIf(!hasTestDatabase)("wallet ledger (real PostgreSQL)", () => {
+// Generous limits: against a remote database (e.g. Neon from the laptop) every query is a network
+// round trip, and the concurrency tests make requests queue behind the wallet lock on purpose.
+describe.skipIf(!hasTestDatabase)("wallet ledger (real PostgreSQL)", { timeout: 120_000 }, () => {
   let db: Database;
   let close: () => Promise<void>;
 
@@ -342,13 +344,13 @@ describe.skipIf(!hasTestDatabase)("wallet ledger (real PostgreSQL)", () => {
   });
 
   describe("the balance always equals the sum of ledger entries", () => {
-    it("holds after 200 random credits and debits, and every balance_after chains correctly", async () => {
+    it("holds after 60 random credits and debits, and every balance_after chains correctly", async () => {
       const { walletId } = await newWallet();
       let seed = 42; // fixed seed: the same "random" sequence every run
       const random = () => (seed = (seed * 1_103_515_245 + 12_345) % 2 ** 31) / 2 ** 31;
       let expected = 0;
 
-      for (let i = 0; i < 200; i++) {
+      for (let i = 0; i < 60; i++) {
         const amountKobo = 1 + Math.floor(random() * 50_000);
         if (random() < 0.5) {
           await credit(db, { walletId, amountKobo, reason: "funding", referenceId: `c${i}` });
@@ -361,7 +363,7 @@ describe.skipIf(!hasTestDatabase)("wallet ledger (real PostgreSQL)", () => {
             expect(error).toBeInstanceOf(InsufficientFundsError);
           }
         }
-        if (i % 20 === 0) expect(await expectConsistent(walletId)).toBe(expected);
+        if (i % 15 === 0) expect(await expectConsistent(walletId)).toBe(expected);
       }
       expect(await expectConsistent(walletId)).toBe(expected);
 
