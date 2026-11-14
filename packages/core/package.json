@@ -15,7 +15,9 @@
     "typecheck": "tsc --noEmit",
     "seed": "node --disable-warning=ExperimentalWarning src/scripts/seed.ts",
     "orders:recheck": "node --disable-warning=ExperimentalWarning src/scripts/recheck-orders.ts",
-    "orders:try": "node --disable-warning=ExperimentalWarning src/scripts/try-order.ts"
+    "orders:try": "node --disable-warning=ExperimentalWarning src/scripts/try-order.ts",
+    "funding:account": "node --disable-warning=ExperimentalWarning src/scripts/funding-account.ts",
+    "funding:reconcile": "node --disable-warning=ExperimentalWarning src/scripts/reconcile-funding.ts"
   },
   "dependencies": {
     "@repo/db": "workspace:*",

@@ -21,7 +21,9 @@
     "db:studio": "pnpm --filter @repo/db studio",
     "vtpass:check": "pnpm --filter @repo/core vtpass:check",
     "orders:recheck": "pnpm --filter @repo/core orders:recheck",
-    "orders:try": "pnpm --filter @repo/core orders:try"
+    "orders:try": "pnpm --filter @repo/core orders:try",
+    "funding:account": "pnpm --filter @repo/core funding:account",
+    "funding:reconcile": "pnpm --filter @repo/core funding:reconcile"
   },
   "devDependencies": {
     "prettier": "^3.10.1",
