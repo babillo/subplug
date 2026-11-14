@@ -1,7 +1,14 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "stream",
-  "globalEnv": ["ALLOW_TEST_AUTH", "DATABASE_URL", "MONNIFY_*", "TEST_DATABASE_URL", "VTPASS_*"],
+  "globalEnv": [
+    "AUTH_SECRET",
+    "DATABASE_URL",
+    "MONNIFY_*",
+    "OTP_SENDER",
+    "TEST_DATABASE_URL",
+    "VTPASS_*"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
