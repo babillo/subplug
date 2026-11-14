@@ -1,11 +1,11 @@
 import { brand } from "@repo/shared";
 import type { Metadata, Viewport } from "next";
-import { Manrope, Space_Grotesk } from "next/font/google";
+import { Manrope, Plus_Jakarta_Sans } from "next/font/google";
 
 import "./globals.css";
 
 const manrope = Manrope({ variable: "--font-manrope", subsets: ["latin"] });
-const spaceGrotesk = Space_Grotesk({ variable: "--font-space-grotesk", subsets: ["latin"] });
+const jakarta = Plus_Jakarta_Sans({ variable: "--font-jakarta", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: { default: brand.name, template: `%s · ${brand.name}` },
@@ -21,10 +21,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en-NG"
-      className={`${manrope.variable} ${spaceGrotesk.variable} h-full antialiased`}
-    >
+    <html lang="en-NG" className={`${manrope.variable} ${jakarta.variable} h-full antialiased`}>
       <body className="min-h-full">{children}</body>
     </html>
   );
