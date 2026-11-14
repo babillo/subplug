@@ -5,9 +5,11 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./brand.json": "./src/brand.json"
+    "./brand.json": "./src/brand.json",
+    "./orders": "./src/orders.ts"
   },
   "scripts": {
+    "test": "vitest run",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
@@ -15,6 +17,7 @@
     "@repo/config-eslint": "workspace:*",
     "@repo/config-typescript": "workspace:*",
     "eslint": "^9.39.0",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "vitest": "^5.1.0"
   }
 }
