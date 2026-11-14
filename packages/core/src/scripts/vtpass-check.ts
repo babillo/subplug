@@ -66,13 +66,15 @@ try {
     console.error(`VTpass error: ${error.message}`);
     if (error.raw !== undefined) console.error("VTpass replied:", JSON.stringify(error.raw));
     if (error.httpStatus === 401) {
-      // Observed on the sandbox: a plain-text reply means no api-key arrived at all;
+      // Observed on the sandbox: a plain-text reply means the api-key was missing, blank, or ignored
+      // because the profile's API authentication type is "Basic";
       // {"code":"087"} means an api-key arrived but VTpass doesn't recognise it.
       console.error(
         typeof error.raw === "string"
-          ? "\nHint: VTpass treated this as a request with no usable api-key. Check that " +
-              "VTPASS_API_KEY above is the API key (not the public or secret key), and that your " +
-              "sandbox profile's API authentication type is set to 'All' or 'API Keys'."
+          ? "\nHint: VTpass ignored the API keys. Most likely cause (seen in practice): your sandbox " +
+              "profile's API authentication type is 'Basic'. Set it to 'All' or 'API Keys' " +
+              "(sandbox.vtpass.com > Profile > API Keys). Otherwise check that VTPASS_API_KEY " +
+              "above is the API key, not the public or secret key."
           : "\nHint: VTpass received keys but rejected them. Make sure they come from your SANDBOX " +
               "account (sandbox.vtpass.com > profile > API Keys); live keys don't work on the sandbox.",
       );

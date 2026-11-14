@@ -138,6 +138,11 @@ pnpm vtpass:check
 
 It never prints your keys. If a setting is missing it names the variable, not its value.
 
+Getting the sandbox keys: log in at sandbox.vtpass.com, open **Profile → API Keys**, and copy the
+API key, the public key (`PK_…`) and the secret key (`SK_…`) into `.env.local`. On that page, set
+**API authentication type** to **All** or **API Keys**. If it's left on **Basic**, VTpass ignores
+the keys and every request fails with HTTP 401 `"Invalid Credentials."`, even with correct keys.
+
 Watch mode while writing tests in `packages/core`:
 
 ```bash
