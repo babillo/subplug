@@ -13,6 +13,15 @@ export type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 export type DbOrTx = Database | Transaction;
 
 /**
+ * Neon's connection strings say sslmode=require. The pg driver currently treats that as
+ * verify-full (encrypted AND the server certificate checked) but warns that a future version will
+ * weaken it. Spelling out verify-full keeps today's stronger behaviour and silences the warning.
+ */
+export function normaliseConnectionString(url: string): string {
+  return url.replace(/([?&]sslmode=)(require|prefer|verify-ca)(?=&|$)/, "$1verify-full");
+}
+
+/**
  * Opens a connection pool to Postgres (Neon). Call `close()` when a script is done,
  * otherwise Node keeps running while the pool is open.
  */
@@ -20,7 +29,10 @@ export function createDb(
   url: string = getDatabaseUrl(),
   options: { maxConnections?: number } = {},
 ) {
-  const pool = new pg.Pool({ connectionString: url, max: options.maxConnections ?? 5 });
+  const pool = new pg.Pool({
+    connectionString: normaliseConnectionString(url),
+    max: options.maxConnections ?? 5,
+  });
   const db = drizzle({ client: pool, schema, casing: "snake_case" });
   return { db, pool, close: () => pool.end() };
 }
