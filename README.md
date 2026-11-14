@@ -33,14 +33,14 @@ results.
 
 ## Database: Neon
 
-We use one hosted Postgres database on Neon for development, from both the laptop and the cloud.
+Development uses the `dev` branch of the Neon project **"SubPlug project"**
+(`nameless-poetry-89567642`). The `production` branch stays untouched until launch.
 
-1. In the Neon console, create a project, then a branch called `dev` (keep `main` for production
-   later).
-2. Open **Connect**, pick the `dev` branch, and copy the connection string. It looks like
+1. In the Neon console, open "SubPlug project", click **Connect**, pick the `dev` branch, and copy
+   the connection string. It looks like
    `postgresql://USER:PASSWORD@ep-xxxx.REGION.aws.neon.tech/neondb?sslmode=require`.
-3. Use that string as `DATABASE_URL` in the two places below. It contains a password: never commit
-   it or paste it into a chat.
+2. Use that string as `DATABASE_URL` in `.env.local` on your laptop. It contains a password: never
+   commit it or paste it into a chat.
 
 Environment variables are read from the real environment first, then from `.env.local` at the repo
 root to fill in anything missing.
@@ -62,16 +62,23 @@ Then check the database connection:
 pnpm db:check
 ```
 
+All database work against Neon (migrations, seed data, real sandbox purchases) runs from the laptop.
+
 ## Setup in the cloud environment (Claude Code on the web / app)
 
-There is no `.env.local` in the cloud. Instead, open the cloud environment's settings (the
-environment menu in the session's title bar, then **Edit**) and add each name from `.env.example`
-as an **environment variable**: `DATABASE_URL`, `VTPASS_BASE_URL`, `VTPASS_API_KEY`,
-`VTPASS_PUBLIC_KEY`, `VTPASS_SECRET_KEY`. New sessions pick them up.
+Cloud sessions **can't connect to Neon's database**: their network only allows web (HTTPS) traffic,
+and Postgres uses a direct connection on port 5432. So:
 
-Values saved there are visible to anyone who can edit that environment, so use only the Neon `dev`
-branch and the VTpass sandbox keys there, never production ones. The cloud has no Docker, so
-nothing in this repo depends on it.
+- Don't add `DATABASE_URL` to the cloud environment's settings.
+- Automated database tests in the cloud use a throwaway PostgreSQL installed inside the cloud
+  machine, not Neon.
+- The Neon API does work from the cloud (it's HTTPS). A Neon API key is saved on the cloud
+  environment for managing branches.
+
+There is no `.env.local` in the cloud. Any other variables a cloud session needs go in the cloud
+environment's settings (the environment menu in the session's title bar, then **Edit**). Values
+saved there are visible to anyone who can edit that environment, so only ever use test/sandbox keys
+there. The cloud has no Docker, so nothing in this repo depends on it.
 
 ## Run the apps
 
