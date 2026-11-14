@@ -1,0 +1,2 @@
+ALTER TABLE "funding_events" ADD COLUMN "fee_kobo" bigint DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "funding_events" ADD CONSTRAINT "funding_fee_valid" CHECK ("funding_events"."fee_kobo" >= 0 and ("funding_events"."fee_kobo" = 0 or "funding_events"."fee_kobo" < "funding_events"."amount_kobo"));

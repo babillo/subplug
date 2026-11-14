@@ -15,6 +15,20 @@
       "when": 1794660714891,
       "tag": "0001_order_client_reference",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794662882525,
+      "tag": "0002_funding_accounts",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794664360970,
+      "tag": "0003_funding_fee",
+      "breakpoints": true
     }
   ]
 }

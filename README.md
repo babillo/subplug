@@ -155,6 +155,47 @@ is set, e.g. in `.env.local`; otherwise they're skipped. To run only those:
 pnpm --filter @repo/core test:integration
 ```
 
+## Wallet funding (Monnify sandbox)
+
+Each customer gets their own bank account number. Money sent to it is credited to their wallet.
+
+1. **Get sandbox keys:** sign up at app.monnify.com, then **Developer** → API keys. Put
+   `MONNIFY_API_KEY` (starts with `MK_TEST_`), `MONNIFY_SECRET_KEY` and `MONNIFY_CONTRACT_CODE` in
+   `.env.local`, with `MONNIFY_BASE_URL=https://sandbox.monnify.com`.
+2. **Create the seed user's account number** (the sandbox accepts any 11 digits as a BVN):
+
+```bash
+pnpm funding:account 22222222222
+```
+
+3. **Send a test payment with Monnify's payment simulator** (websim.sdk.monnify.com → Transfer):
+   enter the account number and an amount. **Never send real money to sandbox account numbers**:
+   real bank transfers don't reach the sandbox.
+4. **Credit it.** Without a public URL Monnify can't reach your laptop's webhook, so use the backup
+   job, which asks Monnify directly for each account's payments:
+
+```bash
+pnpm funding:reconcile
+```
+
+Run `pnpm funding:account` again to see the new balance. Each payment is credited at most once,
+however many times you run it.
+
+**Funding fee:** ₦50 per deposit (₦5,000 sent → ₦4,950 credited), waived on deposits of ₦50 or
+less. Both the amount received and the fee are recorded. Change it in
+`packages/core/src/funding/fees.ts`.
+
+How a payment is credited safely: the webhook signature is checked, then Monnify is asked directly
+how much was paid and into which account. **Only Monnify's answer counts**; the amount in the
+webhook itself is ignored. The customer's BVN/NIN is sent to Monnify and never stored by us.
+
+API (temporary test sign-in, see "The orders API" below):
+
+- `POST /api/wallet/funding-accounts` with `{ "bvn": "..." }` or `{ "nin": "..." }` creates the
+  account numbers. `GET` lists them.
+- `POST /api/webhooks/monnify` receives Monnify's notifications. Pointing Monnify at it needs a
+  public URL (a deployed site or a tunnel); that comes with deployment.
+
 ## Purchases (sandbox)
 
 | Command                       | What it does                                                            |
