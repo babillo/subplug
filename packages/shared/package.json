@@ -6,7 +6,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./brand.json": "./src/brand.json",
-    "./orders": "./src/orders.ts"
+    "./orders": "./src/orders.ts",
+    "./money": "./src/money.ts",
+    "./networks": "./src/networks.ts",
+    "./plans": "./src/plans.ts"
   },
   "scripts": {
     "test": "vitest run",

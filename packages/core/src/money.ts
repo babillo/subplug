@@ -17,15 +17,8 @@ export function nairaToKobo(naira: number): Kobo {
   return naira * 100;
 }
 
-/** Formats kobo for display, e.g. 150050 -> "₦1,500.50". Display only; never parse this back. */
-export function formatNaira(kobo: Kobo): string {
-  assertKobo(kobo);
-  const sign = kobo < 0 ? "-" : "";
-  const abs = Math.abs(kobo);
-  const naira = Math.floor(abs / 100);
-  const remainder = String(abs % 100).padStart(2, "0");
-  return `${sign}₦${naira.toLocaleString("en-NG")}.${remainder}`;
-}
+/** Formats kobo for display, e.g. 150050 -> "₦1,500.50". Shared with the web and mobile apps. */
+export { formatNaira } from "@repo/shared/money";
 
 const DECIMAL_PATTERN = /^(-?)(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d+))?$/;
 

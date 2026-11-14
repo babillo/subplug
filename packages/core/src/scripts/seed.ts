@@ -12,6 +12,8 @@
 import { createDb, loadLocalEnv, schema } from "@repo/db";
 import { eq, sql } from "drizzle-orm";
 
+import { isDataPlan } from "@repo/shared/plans";
+
 import { hashPin } from "../auth/pin.ts";
 import { formatNaira } from "../money.ts";
 import { createVtpassAdapterFromEnv } from "../providers/vtpass/adapter.ts";
@@ -151,7 +153,10 @@ try {
       const { variations } = await vtpass.getVariations(n.dataService);
       // VTpass takes whole naira, so only plans with a whole-naira price can be sold as-is.
       const plans = variations
-        .filter((v) => v.fixedPrice && v.priceKobo > 0 && v.priceKobo % 100 === 0)
+        // Keep real data plans only (VTpass mixes voice bundles into data lists) with whole-naira prices.
+        .filter(
+          (v) => v.fixedPrice && v.priceKobo > 0 && v.priceKobo % 100 === 0 && isDataPlan(v.name),
+        )
         .sort((a, b) => a.priceKobo - b.priceKobo)
         .slice(0, DATA_PLANS_PER_NETWORK);
 
