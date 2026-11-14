@@ -307,6 +307,7 @@ describe.skipIf(!hasTestDatabase)("wallet funding (real PostgreSQL)", { timeout:
       const summary = await reconcileFunding(db, gateway);
       expect(summary).toMatchObject({
         accounts: 1,
+        listed: 3,
         checked: 2,
         credited: 1,
         notPaid: 1,
