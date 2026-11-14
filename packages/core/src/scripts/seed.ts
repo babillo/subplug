@@ -12,6 +12,7 @@
 import { createDb, loadLocalEnv, schema } from "@repo/db";
 import { eq, sql } from "drizzle-orm";
 
+import { hashPin } from "../auth/pin.ts";
 import { formatNaira } from "../money.ts";
 import { createVtpassAdapterFromEnv } from "../providers/vtpass/adapter.ts";
 import { credit, getBalance } from "../wallet/wallet.ts";
@@ -19,6 +20,8 @@ import { credit, getBalance } from "../wallet/wallet.ts";
 loadLocalEnv();
 
 const TEST_USER_EMAIL = "seed-user@example.test";
+/** The seed user's transaction PIN. Development test data only. */
+const SEED_PIN = "1357";
 const STARTING_BALANCE_KOBO = 500_000; // ₦5,000
 const DATA_PLANS_PER_NETWORK = 6;
 
@@ -46,6 +49,14 @@ try {
     .select()
     .from(schema.users)
     .where(eq(schema.users.email, TEST_USER_EMAIL));
+  // Dev-only transaction PIN, so the test user can buy (`pnpm orders:try`). Set once; a PIN
+  // changed later through the app is left alone.
+  if (!user!.pinHash) {
+    await db
+      .update(schema.users)
+      .set({ pinHash: await hashPin(SEED_PIN) })
+      .where(eq(schema.users.id, user!.id));
+  }
   await db.insert(schema.wallets).values({ userId: user!.id }).onConflictDoNothing();
   const [wallet] = await db
     .select()

@@ -5,6 +5,8 @@
 import { createDb, loadLocalEnv, schema } from "@repo/db";
 import { and, asc, desc, eq, isNotNull } from "drizzle-orm";
 
+import { createAuthService } from "../auth/auth.ts";
+import { ConsoleOtpSender, getAuthSecret } from "../auth/senders.ts";
 import { formatNaira } from "../money.ts";
 import { purchaseErrorResponse } from "../orders/http.ts";
 import { createPurchaseService } from "../orders/purchase.ts";
@@ -15,6 +17,8 @@ loadLocalEnv();
 
 const SEED_EMAIL = "seed-user@example.test";
 const RECIPIENT = "08011111111";
+/** The seed user's dev PIN (see seed.ts). */
+const SEED_PIN = "1357";
 const [kind = "data", nairaArg] = process.argv.slice(2);
 
 if (!process.env.VTPASS_BASE_URL?.includes("sandbox.vtpass.com")) {
@@ -48,12 +52,18 @@ try {
   const before = await getBalance(db, wallet!.id);
   console.log(`Buying "${product.name}" for ${RECIPIENT}. Wallet before: ${formatNaira(before)}\n`);
 
-  const purchases = createPurchaseService({ db, getProvider: createProviderRegistry() });
+  const auth = createAuthService({ db, sender: new ConsoleOtpSender(), secret: getAuthSecret() });
+  const purchases = createPurchaseService({
+    db,
+    getProvider: createProviderRegistry(),
+    verifyPin: auth.verifyPin,
+  });
   const { order } = await purchases.buy({
     userId: user.id,
     productId: product.id,
     recipientPhone: RECIPIENT,
     faceValueKobo,
+    pin: SEED_PIN,
   });
 
   console.log("Order row:");

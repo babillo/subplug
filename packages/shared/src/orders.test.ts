@@ -28,9 +28,11 @@ describe("parseCreateOrderRequest", () => {
   const productId = "3f1c1b6e-2a51-4c32-9d1e-6b0f1c2d3e4f";
 
   it("accepts a data order and normalises the phone", () => {
-    expect(parseCreateOrderRequest({ productId, recipientPhone: "+2348011111111" })).toEqual({
+    expect(
+      parseCreateOrderRequest({ productId, recipientPhone: "+2348011111111", pin: "1357" }),
+    ).toEqual({
       ok: true,
-      value: { productId, recipientPhone: "08011111111" },
+      value: { productId, recipientPhone: "08011111111", pin: "1357" },
     });
   });
 
@@ -41,6 +43,7 @@ describe("parseCreateOrderRequest", () => {
         recipientPhone: "08011111111",
         faceValueKobo: 100_000,
         clientReference: "tap-1234",
+        pin: "1357",
       }),
     ).toEqual({
       ok: true,
@@ -49,6 +52,7 @@ describe("parseCreateOrderRequest", () => {
         recipientPhone: "08011111111",
         faceValueKobo: 100_000,
         clientReference: "tap-1234",
+        pin: "1357",
       },
     });
   });
@@ -59,11 +63,13 @@ describe("parseCreateOrderRequest", () => {
       recipientPhone: "123",
       faceValueKobo: 10.5,
       clientReference: "x".repeat(101),
+      pin: "12a4",
     });
     expect(result.ok).toBe(false);
     expect(!result.ok && Object.keys(result.errors).sort()).toEqual([
       "clientReference",
       "faceValueKobo",
+      "pin",
       "productId",
       "recipientPhone",
     ]);
@@ -76,6 +82,7 @@ describe("parseCreateOrderRequest", () => {
   it("rejects missing fields", () => {
     const result = parseCreateOrderRequest({});
     expect(!result.ok && Object.keys(result.errors).sort()).toEqual([
+      "pin",
       "productId",
       "recipientPhone",
     ]);

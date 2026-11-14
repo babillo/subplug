@@ -6,11 +6,15 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { FakeProvider } from "../test/fake-provider.ts";
 import { hasTestDatabase, openTestDb, resetDatabase } from "../test/db.ts";
 import { credit, getBalance, getLedgerBalance, InsufficientFundsError } from "../wallet/wallet.ts";
+import { AuthError, createAuthService } from "../auth/auth.ts";
+import { hashPin, PIN_MAX_ATTEMPTS } from "../auth/pin.ts";
+import { FakeOtpSender } from "../test/fake-otp-sender.ts";
 import { PurchaseError, RecentPurchaseError } from "./errors.ts";
-import { createPurchaseService, placeOrder, settleOrder } from "./purchase.ts";
+import { type BuyInput, createPurchaseService, placeOrder, settleOrder } from "./purchase.ts";
 import { recheckPendingOrders } from "./recheck.ts";
 
 const START = 500_000; // ₦5,000
+const TEST_SECRET = "test-auth-secret-0123456789abcdef";
 
 describe.skipIf(!hasTestDatabase)("purchase flow (real PostgreSQL)", { timeout: 120_000 }, () => {
   let db: Database;
@@ -34,12 +38,33 @@ describe.skipIf(!hasTestDatabase)("purchase flow (real PostgreSQL)", { timeout: 
   /** A fresh recipient per call, so the 15-second same-number rule doesn't get in the way. */
   const phone = () => `0803${String(1_000_000 + phoneCounter++).slice(-7)}`;
 
-  const service = () => createPurchaseService({ db, getProvider: () => provider });
+  /** Everyone's PIN in these tests. */
+  const PIN = "1357";
+
+  const auth = () => createAuthService({ db, sender: new FakeOtpSender(), secret: TEST_SECRET });
+
+  /** The purchase service, with the buyer's correct PIN filled in unless a test passes its own. */
+  const service = () => {
+    const purchases = createPurchaseService({
+      db,
+      getProvider: () => provider,
+      verifyPin: auth().verifyPin,
+    });
+    return {
+      buy: (input: Omit<BuyInput, "pin"> & { pin?: string }) =>
+        purchases.buy({ pin: PIN, ...input }),
+    };
+  };
 
   async function newUser(tier: "regular" | "reseller" = "regular", startKobo = START) {
     const [user] = await db
       .insert(schema.users)
-      .values({ fullName: "Buyer", email: `${crypto.randomUUID()}@example.test`, tier })
+      .values({
+        fullName: "Buyer",
+        email: `${crypto.randomUUID()}@example.test`,
+        tier,
+        pinHash: await hashPin(PIN),
+      })
       .returning();
     const [wallet] = await db.insert(schema.wallets).values({ userId: user!.id }).returning();
     if (startKobo > 0) {
@@ -106,7 +131,9 @@ describe.skipIf(!hasTestDatabase)("purchase flow (real PostgreSQL)", { timeout: 
     );
   }
 
-  const buyData = (extra: Partial<{ clientReference: string; recipientPhone: string }> = {}) =>
+  const buyData = (
+    extra: Partial<{ clientReference: string; recipientPhone: string; pin: string }> = {},
+  ) =>
     service().buy({ userId: fx.userId, productId: fx.dataId, recipientPhone: phone(), ...extra });
 
   describe("success", () => {
@@ -443,6 +470,34 @@ describe.skipIf(!hasTestDatabase)("purchase flow (real PostgreSQL)", { timeout: 
     });
   });
 
+  describe("transaction PIN", () => {
+    it("a wrong PIN stops the purchase before any money moves", async () => {
+      const error = await buyData({ pin: "2468" }).catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(AuthError);
+      expect((error as AuthError).code).toBe("wrong_pin");
+      expect(provider.purchases).toHaveLength(0);
+      expect(await db.select().from(schema.orders)).toHaveLength(0);
+      await expectBalance(fx.walletId, START);
+    });
+
+    it("after 5 wrong PINs, even the right PIN can't buy", async () => {
+      for (let i = 0; i < PIN_MAX_ATTEMPTS; i++) {
+        await buyData({ pin: "2468" }).catch(() => undefined);
+      }
+      const error = await buyData().catch((e: unknown) => e);
+      expect((error as AuthError).code).toBe("pin_locked");
+      expect(provider.purchases).toHaveLength(0);
+      await expectBalance(fx.walletId, START);
+    });
+
+    it("a customer without a PIN can't buy", async () => {
+      await db.update(schema.users).set({ pinHash: null }).where(eq(schema.users.id, fx.userId));
+      const error = await buyData().catch((e: unknown) => e);
+      expect((error as AuthError).code).toBe("pin_not_set");
+      await expectBalance(fx.walletId, START);
+    });
+  });
+
   describe("refusals", () => {
     it.each([
       ["an unknown product", async () => ({ productId: crypto.randomUUID() }), "product_not_found"],
@@ -468,7 +523,6 @@ describe.skipIf(!hasTestDatabase)("purchase flow (real PostgreSQL)", { timeout: 
         },
         "user_suspended",
       ],
-      ["an unknown user", async () => ({ userId: crypto.randomUUID() }), "user_not_found"],
     ])("refuses %s without charging", async (_label, arrange, code) => {
       const overrides = await arrange();
       const error = await service()
@@ -478,6 +532,15 @@ describe.skipIf(!hasTestDatabase)("purchase flow (real PostgreSQL)", { timeout: 
       expect((error as PurchaseError).code).toBe(code);
       expect(provider.purchases).toHaveLength(0);
       await expectBalance(fx.walletId, START);
+    });
+
+    it("refuses an unknown user (at the PIN check) without charging", async () => {
+      const error = await service()
+        .buy({ userId: crypto.randomUUID(), productId: fx.dataId, recipientPhone: phone() })
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(AuthError);
+      expect((error as AuthError).code).toBe("user_not_found");
+      expect(provider.purchases).toHaveLength(0);
     });
 
     it("refuses an invalid phone number", async () => {
