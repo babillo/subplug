@@ -235,6 +235,13 @@ function safeKobo(value: unknown): Kobo | null {
   }
 }
 
+export const VTPASS_ENV_NAMES = [
+  "VTPASS_BASE_URL",
+  "VTPASS_API_KEY",
+  "VTPASS_PUBLIC_KEY",
+  "VTPASS_SECRET_KEY",
+] as const;
+
 /**
  * Builds the adapter from env vars (cloud environment settings, or .env.local on the laptop).
  * Error messages name missing variables but never print values.
@@ -243,13 +250,9 @@ export function createVtpassAdapterFromEnv(
   env: Record<string, string | undefined> = process.env,
   options: Pick<VtpassConfig, "timeoutMs" | "fetch"> = {},
 ): VtpassAdapter {
-  const names = [
-    "VTPASS_BASE_URL",
-    "VTPASS_API_KEY",
-    "VTPASS_PUBLIC_KEY",
-    "VTPASS_SECRET_KEY",
-  ] as const;
-  const missing = names.filter((name) => !env[name]);
+  // Trim stray spaces/line breaks (easy to paste by accident); a blank value counts as missing.
+  const value = (name: (typeof VTPASS_ENV_NAMES)[number]) => env[name]?.trim() ?? "";
+  const missing = VTPASS_ENV_NAMES.filter((name) => value(name) === "");
   if (missing.length > 0) {
     throw new Error(
       `Missing VTpass settings: ${missing.join(", ")}. Add them to .env.local (laptop) ` +
@@ -257,10 +260,10 @@ export function createVtpassAdapterFromEnv(
     );
   }
   return new VtpassAdapter({
-    baseUrl: env.VTPASS_BASE_URL as string,
-    apiKey: env.VTPASS_API_KEY as string,
-    publicKey: env.VTPASS_PUBLIC_KEY as string,
-    secretKey: env.VTPASS_SECRET_KEY as string,
+    baseUrl: value("VTPASS_BASE_URL"),
+    apiKey: value("VTPASS_API_KEY"),
+    publicKey: value("VTPASS_PUBLIC_KEY"),
+    secretKey: value("VTPASS_SECRET_KEY"),
     ...options,
   });
 }
