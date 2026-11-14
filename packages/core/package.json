@@ -9,6 +9,8 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:integration": "vitest run src/**/*.integration.test.ts",
+    "vtpass:check": "node --disable-warning=ExperimentalWarning src/scripts/vtpass-check.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
