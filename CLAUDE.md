@@ -56,8 +56,14 @@ VTPASS_SECRET_KEY=
 - I run Claude Code in two places, both on this GitHub repo: a **cloud environment** and my **desktop**.
 - **Env vars in the cloud** come from the cloud environment's settings (no `.env` file there).
 - **Env vars on my laptop** come from `.env.local` at the repo root (copy `.env.example`).
-- Real env vars win over `.env.local`. Use the Neon **dev** branch URL in both places, never production.
+- Real env vars win over `.env.local`.
 - Docker is not available in the cloud, so nothing may depend on it.
+- **Neon project:** "SubPlug project" (`nameless-poetry-89567642`). Development uses its `dev` branch, never `production`. Ignore "my-first-project" (`broad-sunset-24732751`); it is unused.
+- **Cloud sessions cannot connect to Postgres directly** (their network only allows HTTPS, not raw TCP on port 5432). So:
+  - Database work against Neon (migrations, seed, real sandbox purchases) runs on my laptop.
+  - Automated DB tests in the cloud use a throwaway local PostgreSQL installed in the container, not Neon.
+  - Do not put `DATABASE_URL` in the cloud environment's settings.
+  - The Neon API (HTTPS) does work from the cloud: a Neon API key is saved on the cloud environment for managing branches.
 
 ## Working style
 - One feature per session. Plan first, show me the plan, then build.
