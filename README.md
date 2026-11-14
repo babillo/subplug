@@ -180,6 +180,10 @@ pnpm funding:reconcile
 Run `pnpm funding:account` again to see the new balance. Each payment is credited at most once,
 however many times you run it.
 
+**Funding fee:** ₦50 per deposit (₦5,000 sent → ₦4,950 credited), waived on deposits of ₦50 or
+less. Both the amount received and the fee are recorded. Change it in
+`packages/core/src/funding/fees.ts`.
+
 How a payment is credited safely: the webhook signature is checked, then Monnify is asked directly
 how much was paid and into which account. **Only Monnify's answer counts**; the amount in the
 webhook itself is ignored. The customer's BVN/NIN is sent to Monnify and never stored by us.
