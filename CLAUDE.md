@@ -55,6 +55,7 @@ VTPASS_BASE_URL=https://sandbox.vtpass.com/api
 VTPASS_API_KEY=
 VTPASS_PUBLIC_KEY=
 VTPASS_SECRET_KEY=
+ALLOW_TEST_AUTH=     # TEMPORARY test sign-in for /api/orders until auth (step 5); never in production
 ```
 `.env*` files are git-ignored. Keep a `.env.example` with empty values.
 

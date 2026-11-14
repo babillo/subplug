@@ -155,6 +155,36 @@ is set, e.g. in `.env.local`; otherwise they're skipped. To run only those:
 pnpm --filter @repo/core test:integration
 ```
 
+## Purchases (sandbox)
+
+| Command                       | What it does                                                            |
+| ----------------------------- | ----------------------------------------------------------------------- |
+| `pnpm orders:try`             | Buys the cheapest MTN data plan for the seed user on the VTpass sandbox |
+| `pnpm orders:try airtime 100` | Buys ₦100 MTN airtime instead                                           |
+| `pnpm orders:recheck`         | Settles orders pending for 2+ minutes: success, or failed and refunded  |
+
+Both print the order and the wallet's ledger entries. They use `DATABASE_URL` and the VTpass keys,
+so run them on the laptop after `pnpm db:migrate` and `pnpm db:seed`. `orders:recheck` is safe to
+run any time; it will be scheduled on Cloudflare later. Orders pending for over 24 hours are listed
+for a human to check, never refunded automatically.
+
+### The orders API
+
+`POST /api/orders` buys from the wallet. Until real sign-in exists it uses **temporary test
+sign-in**: set `ALLOW_TEST_AUTH=true` in `.env.local` and send the user's id in an
+`x-test-user-id` header. Production builds ignore this completely.
+
+```bash
+curl -X POST http://localhost:3000/api/orders -H "content-type: application/json" -H "x-test-user-id: USER_ID" -d '{"productId":"PRODUCT_ID","recipientPhone":"08011111111","faceValueKobo":10000,"clientReference":"tap-1"}'
+```
+
+- `faceValueKobo`: airtime only, in kobo (₦100 = `10000`). Data plans have a fixed price.
+- `clientReference`: a random id per "Buy" tap. Sending it again returns the same order
+  (`duplicate: true`) instead of charging twice.
+- Answers: `201` new order (`success`, `pending`, or `failed` and already refunded), `200` repeated
+  tap, `400` invalid input, `401` not signed in, `402` balance too low, `429` same number within 15
+  seconds (with `Retry-After`).
+
 ## VTpass sandbox check
 
 Prints the sandbox wallet balance and the MTN data plans, to confirm the keys work:
