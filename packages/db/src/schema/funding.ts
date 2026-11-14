@@ -26,7 +26,10 @@ export const fundingEvents = pgTable(
     gateway: text().notNull(),
     /** The gateway's own reference for the payment. Unique per gateway: never credited twice. */
     gatewayReference: text().notNull(),
+    /** What the customer sent (gross), in kobo. */
     amountKobo: bigint({ mode: "number" }).notNull(),
+    /** Our funding fee, in kobo. The wallet is credited amountKobo − feeKobo. */
+    feeKobo: bigint({ mode: "number" }).notNull().default(0),
     status: fundingStatus().notNull(),
     /** The gateway's payload, for audits and disputes. */
     raw: jsonb(),
@@ -35,6 +38,10 @@ export const fundingEvents = pgTable(
   (t) => [
     unique("funding_gateway_reference_unique").on(t.gateway, t.gatewayReference),
     check("funding_amount_positive", sql`${t.amountKobo} > 0`),
+    check(
+      "funding_fee_valid",
+      sql`${t.feeKobo} >= 0 and (${t.feeKobo} = 0 or ${t.feeKobo} < ${t.amountKobo})`,
+    ),
   ],
 );
 

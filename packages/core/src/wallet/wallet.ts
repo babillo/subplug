@@ -12,7 +12,7 @@ import { type DbOrTx, schema } from "@repo/db";
 import { and, eq, sql } from "drizzle-orm";
 
 import { isUniqueViolation } from "../db-errors.ts";
-import type { Kobo } from "../money.ts";
+import { formatNaira, type Kobo } from "../money.ts";
 
 const { auditLog, fundingEvents, ledgerEntries, wallets } = schema;
 
@@ -131,7 +131,10 @@ export interface FundingInput {
   gateway: string;
   /** The gateway's reference for this payment. */
   gatewayReference: string;
+  /** What the customer sent (gross), in kobo. */
   amountKobo: Kobo;
+  /** Our funding fee, in kobo (default 0). The wallet is credited amountKobo − feeKobo. */
+  feeKobo?: Kobo;
   /** The gateway's payload, kept for audits. */
   raw?: unknown;
 }
@@ -147,6 +150,16 @@ export interface FundingResult extends MovementResult {
  */
 export async function recordFunding(db: DbOrTx, input: FundingInput): Promise<FundingResult> {
   assertPositiveKobo(input.amountKobo);
+  const feeKobo = input.feeKobo ?? 0;
+  if (
+    !Number.isSafeInteger(feeKobo) ||
+    feeKobo < 0 ||
+    (feeKobo > 0 && feeKobo >= input.amountKobo)
+  ) {
+    throw new RangeError(
+      `Funding fee must be a whole number of kobo below the amount received, got ${feeKobo}`,
+    );
+  }
   return db.transaction(async (tx) => {
     // If another request inserted this reference first, this waits for it to finish, then skips.
     const [inserted] = await tx
@@ -156,6 +169,7 @@ export async function recordFunding(db: DbOrTx, input: FundingInput): Promise<Fu
         gateway: input.gateway,
         gatewayReference: input.gatewayReference,
         amountKobo: input.amountKobo,
+        feeKobo,
         status: "credited",
         raw: input.raw ?? null,
       })
@@ -165,10 +179,13 @@ export async function recordFunding(db: DbOrTx, input: FundingInput): Promise<Fu
     if (inserted) {
       const { entry } = await credit(tx, {
         walletId: input.walletId,
-        amountKobo: input.amountKobo,
+        amountKobo: input.amountKobo - feeKobo,
         reason: "funding",
         referenceId: inserted.id,
-        description: `${input.gateway} ${input.gatewayReference}`,
+        description:
+          feeKobo > 0
+            ? `${input.gateway} ${input.gatewayReference}: ${formatNaira(input.amountKobo)} received, ${formatNaira(feeKobo)} fee`
+            : `${input.gateway} ${input.gatewayReference}`,
       });
       return { fundingEvent: inserted, entry, duplicate: false };
     }

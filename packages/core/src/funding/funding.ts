@@ -14,6 +14,7 @@ import { and, eq } from "drizzle-orm";
 
 import type { Kobo } from "../money.ts";
 import { recordFunding } from "../wallet/wallet.ts";
+import { fundingFeeKobo } from "./fees.ts";
 import type { FundingGateway } from "./types.ts";
 
 const { fundingAccounts, fundingEvents, users, wallets } = schema;
@@ -111,7 +112,12 @@ export type CreditOutcome = "credited" | "duplicate" | "not_paid" | "unknown_acc
 export interface CreditResult {
   outcome: CreditOutcome;
   transactionReference: string;
+  /** What the customer sent. */
   amountKobo?: Kobo;
+  /** Our funding fee. */
+  feeKobo?: Kobo;
+  /** What the wallet received (amountKobo − feeKobo). */
+  creditedKobo?: Kobo;
   walletId?: string;
 }
 
@@ -145,17 +151,20 @@ export async function confirmAndCredit(
     .limit(1);
   if (!owner) return { outcome: "unknown_account", transactionReference };
 
-  const { duplicate } = await recordFunding(db, {
+  const { duplicate, fundingEvent } = await recordFunding(db, {
     walletId: owner.walletId,
     gateway: gateway.name,
     gatewayReference: transactionReference,
     amountKobo: payment.amountKobo,
+    feeKobo: fundingFeeKobo(payment.amountKobo),
     raw: { verified: payment.raw, webhook: webhookBody ?? null },
   });
   return {
     outcome: duplicate ? "duplicate" : "credited",
     transactionReference,
-    amountKobo: payment.amountKobo,
+    amountKobo: fundingEvent.amountKobo,
+    feeKobo: fundingEvent.feeKobo,
+    creditedKobo: fundingEvent.amountKobo - fundingEvent.feeKobo,
     walletId: owner.walletId,
   };
 }
@@ -166,6 +175,8 @@ export interface WebhookResult {
   outcome: CreditOutcome | "ignored" | "rejected" | "error";
   transactionReference?: string;
   amountKobo?: Kobo;
+  feeKobo?: Kobo;
+  creditedKobo?: Kobo;
   reason?: string;
 }
 

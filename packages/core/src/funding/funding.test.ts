@@ -6,6 +6,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { FakeGateway } from "../test/fake-gateway.ts";
 import { hasTestDatabase, openTestDb, resetDatabase } from "../test/db.ts";
 import { getBalance, getLedgerBalance } from "../wallet/wallet.ts";
+import { FUNDING_FEE_FLAT_KOBO, fundingFeeKobo } from "./fees.ts";
 import {
   createFundingAccounts,
   FundingError,
@@ -13,6 +14,21 @@ import {
   listFundingAccounts,
   reconcileFunding,
 } from "./funding.ts";
+
+const FEE = 5_000; // ₦50
+
+describe("fundingFeeKobo", () => {
+  it("is a flat ₦50", () => {
+    expect(FUNDING_FEE_FLAT_KOBO).toBe(FEE);
+    expect(fundingFeeKobo(500_000)).toBe(FEE);
+    expect(fundingFeeKobo(5_001)).toBe(FEE);
+  });
+
+  it("is waived on deposits of ₦50 or less", () => {
+    expect(fundingFeeKobo(5_000)).toBe(0);
+    expect(fundingFeeKobo(1)).toBe(0);
+  });
+});
 
 describe.skipIf(!hasTestDatabase)("wallet funding (real PostgreSQL)", { timeout: 120_000 }, () => {
   let db: Database;
@@ -133,14 +149,21 @@ describe.skipIf(!hasTestDatabase)("wallet funding (real PostgreSQL)", { timeout:
 
       const result = await handleFundingWebhook(db, gateway, webhook("MNFY|1"));
 
-      expect(result).toMatchObject({ httpStatus: 200, outcome: "credited", amountKobo: 500_000 });
+      expect(result).toMatchObject({
+        httpStatus: 200,
+        outcome: "credited",
+        amountKobo: 500_000,
+        feeKobo: FEE,
+        creditedKobo: 495_000,
+      });
       expect(gateway.verified).toEqual(["MNFY|1"]);
-      await expectBalance(walletId, 500_000);
+      await expectBalance(walletId, 495_000); // ₦5,000 received − ₦50 fee
       const [event] = await db.select().from(schema.fundingEvents);
       expect(event).toMatchObject({
         gateway: "monnify",
         gatewayReference: "MNFY|1",
         amountKobo: 500_000,
+        feeKobo: FEE,
       });
       const [entry] = await db
         .select()
@@ -149,8 +172,9 @@ describe.skipIf(!hasTestDatabase)("wallet funding (real PostgreSQL)", { timeout:
       expect(entry).toMatchObject({
         reason: "funding",
         referenceId: event!.id,
-        amountKobo: 500_000,
+        amountKobo: 495_000,
       });
+      expect(entry!.description).toContain("₦50.00 fee");
     });
 
     it("a repeated webhook credits only once", async () => {
@@ -160,7 +184,7 @@ describe.skipIf(!hasTestDatabase)("wallet funding (real PostgreSQL)", { timeout:
       const again = await handleFundingWebhook(db, gateway, webhook("MNFY|2"));
 
       expect(again).toMatchObject({ httpStatus: 200, outcome: "duplicate" });
-      await expectBalance(walletId, 500_000);
+      await expectBalance(walletId, 495_000);
     });
 
     it("five copies of the same webhook at the same moment credit only once", async () => {
@@ -171,14 +195,14 @@ describe.skipIf(!hasTestDatabase)("wallet funding (real PostgreSQL)", { timeout:
       );
       expect(results.filter((r) => r.outcome === "credited")).toHaveLength(1);
       expect(results.filter((r) => r.outcome === "duplicate")).toHaveLength(4);
-      await expectBalance(walletId, 500_000);
+      await expectBalance(walletId, 495_000);
     });
 
     it("credits the amount the gateway confirms, never the amount the webhook claims", async () => {
       const { userId, walletId } = await fundedUser();
       gateway.payments.set("MNFY|4", { amountKobo: 100_000, accountReference: userId });
       await handleFundingWebhook(db, gateway, webhook("MNFY|4", { amountPaid: "1000000.00" }));
-      await expectBalance(walletId, 100_000);
+      await expectBalance(walletId, 95_000);
     });
 
     it("rejects a bad signature with 401, without asking the gateway or crediting", async () => {
@@ -247,7 +271,22 @@ describe.skipIf(!hasTestDatabase)("wallet funding (real PostgreSQL)", { timeout:
       gateway.payments.set("B", { amountKobo: 250_000, accountReference: userId });
       await handleFundingWebhook(db, gateway, webhook("A"));
       await handleFundingWebhook(db, gateway, webhook("B"));
-      await expectBalance(walletId, 350_000);
+      await expectBalance(walletId, 340_000); // (₦1,000 − ₦50) + (₦2,500 − ₦50)
+    });
+
+    it("charges no fee on a deposit of ₦50 or less, so the customer never receives ₦0", async () => {
+      const { userId, walletId } = await fundedUser();
+      gateway.payments.set("TINY", { amountKobo: 5_000, accountReference: userId });
+      const result = await handleFundingWebhook(db, gateway, webhook("TINY"));
+      expect(result).toMatchObject({ outcome: "credited", feeKobo: 0, creditedKobo: 5_000 });
+      await expectBalance(walletId, 5_000);
+    });
+
+    it("charges the fee on a deposit just above ₦50", async () => {
+      const { userId, walletId } = await fundedUser();
+      gateway.payments.set("SMALL", { amountKobo: 5_001, accountReference: userId });
+      await handleFundingWebhook(db, gateway, webhook("SMALL"));
+      await expectBalance(walletId, 1);
     });
   });
 
@@ -274,11 +313,11 @@ describe.skipIf(!hasTestDatabase)("wallet funding (real PostgreSQL)", { timeout:
         errors: 0,
       });
       expect(gateway.verified).toEqual(["MISSED", "NOT-YET"]); // "SEEN" skipped: already recorded
-      await expectBalance(walletId, 300_000);
+      await expectBalance(walletId, 290_000);
 
       const again = await reconcileFunding(db, gateway);
       expect(again.credited).toBe(0);
-      await expectBalance(walletId, 300_000);
+      await expectBalance(walletId, 290_000);
     });
 
     it("keeps going when one account fails", async () => {
@@ -294,7 +333,7 @@ describe.skipIf(!hasTestDatabase)("wallet funding (real PostgreSQL)", { timeout:
 
       const summary = await reconcileFunding(db, gateway, { log: () => {} });
       expect(summary).toMatchObject({ accounts: 2, credited: 1, errors: 1 });
-      await expectBalance(b.walletId, 100_000);
+      await expectBalance(b.walletId, 95_000);
     });
   });
 });

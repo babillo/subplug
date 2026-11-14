@@ -31,6 +31,8 @@ export async function POST(request: Request) {
     outcome: result.outcome,
     transactionReference: result.transactionReference,
     amountKobo: result.amountKobo,
+    feeKobo: result.feeKobo,
+    creditedKobo: result.creditedKobo,
     reason: result.reason,
   });
   return Response.json({ received: result.httpStatus === 200 }, { status: result.httpStatus });

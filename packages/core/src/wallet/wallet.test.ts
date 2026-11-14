@@ -322,6 +322,27 @@ describe.skipIf(!hasTestDatabase)("wallet ledger (real PostgreSQL)", { timeout: 
       expect(await expectConsistent(walletId)).toBe(250_000);
     });
 
+    it("credits the amount minus the fee and records both on the funding event", async () => {
+      const { walletId } = await newWallet();
+      const result = await recordFunding(db, { ...funding(walletId), feeKobo: 5_000 });
+      expect(result.entry).toMatchObject({ reason: "funding", amountKobo: 245_000 });
+      expect(result.fundingEvent).toMatchObject({ amountKobo: 250_000, feeKobo: 5_000 });
+      expect(await expectConsistent(walletId)).toBe(245_000);
+
+      // The duplicate is recognised and charges no second fee.
+      const again = await recordFunding(db, { ...funding(walletId), feeKobo: 5_000 });
+      expect(again.duplicate).toBe(true);
+      expect(await expectConsistent(walletId)).toBe(245_000);
+    });
+
+    it.each([-1, 1.5, 250_000, 300_000])("refuses an invalid fee of %s kobo", async (feeKobo) => {
+      const { walletId } = await newWallet();
+      await expect(recordFunding(db, { ...funding(walletId), feeKobo })).rejects.toThrow(
+        RangeError,
+      );
+      expect(await expectConsistent(walletId)).toBe(0);
+    });
+
     it("different payments are all credited", async () => {
       const { walletId } = await newWallet();
       await recordFunding(db, funding(walletId, "ref-1"));

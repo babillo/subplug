@@ -21,3 +21,4 @@ export {
   MonnifyGateway,
 } from "./funding/monnify/gateway.ts";
 export * from "./funding/types.ts";
+export * from "./funding/fees.ts";
