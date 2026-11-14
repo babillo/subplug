@@ -6,8 +6,9 @@
 //
 // Sandbox test numbers (vtpass.com/documentation/mtn-airtime-vtu):
 //   08011111111  → success     201000000000 → pending     any other number → failed
-// Each test buys a different service/number pair: VTpass rejects the same service for the same
-// number within 30 seconds (code 019), which would make these tests flaky.
+// VTpass rejects any new purchase to the same recipient within 15 seconds (code 019, observed on
+// the sandbox; the docs say 30s for the same service). buy() waits between new purchases to the
+// same number so the tests don't trip it.
 import { describe, expect, it } from "vitest";
 
 import type { PurchaseOrder, PurchaseResult } from "../types.ts";
@@ -22,9 +23,29 @@ const FAILED_PHONE = "08022222222";
 const adapter = () => createVtpassAdapterFromEnv();
 const show = (result: PurchaseResult) => JSON.stringify(result.raw);
 
-/** Buys, but stops with a clear instruction if the sandbox account hasn't enabled the product. */
+const SAME_RECIPIENT_GAP_MS = 16_000;
+const lastPurchaseAt = new Map<string, number>();
+
+/** Waits until 16s have passed since the last new purchase to this number (VTpass code 019). */
+async function waitForRecipientGap(phone: string) {
+  const last = lastPurchaseAt.get(phone);
+  const waitMs = last === undefined ? 0 : last + SAME_RECIPIENT_GAP_MS - Date.now();
+  if (waitMs > 0) await new Promise((resolve) => setTimeout(resolve, waitMs));
+}
+
+/**
+ * Buys, but stops with a clear instruction if the sandbox account hasn't enabled the product.
+ * Passing an existing requestId is a resend of an earlier order, so it doesn't wait.
+ */
 async function buy(order: Omit<PurchaseOrder, "requestId"> & { requestId?: string }) {
-  const result = await adapter().purchase({ requestId: generateRequestId(), ...order });
+  const isResend = order.requestId !== undefined && lastPurchaseAt.has(`id:${order.requestId}`);
+  if (!isResend) await waitForRecipientGap(order.recipientPhone);
+  const requestId = order.requestId ?? generateRequestId();
+  const result = await adapter().purchase({ ...order, requestId });
+  if (!isResend) {
+    lastPurchaseAt.set(order.recipientPhone, Date.now());
+    lastPurchaseAt.set(`id:${requestId}`, Date.now());
+  }
   if (result.providerCode === "028") {
     throw new Error(
       `VTpass sandbox: "${order.serviceId}" is not switched on for your account (code 028). ` +

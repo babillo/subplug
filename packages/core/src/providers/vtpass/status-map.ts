@@ -18,7 +18,9 @@ const FAILED_CODES: Record<string, string> = {
   "013": "BELOW MINIMUM AMOUNT ALLOWED",
   "017": "ABOVE MAXIMUM AMOUNT ALLOWED",
   "018": "LOW WALLET BALANCE (our VTpass wallet needs funding)",
-  "019": "LIKELY DUPLICATE TRANSACTION (same number within 30 seconds)",
+  // Docs say "same service, same number, within 30 seconds". Observed on the sandbox (2026-11-14):
+  // any purchase to the same recipient within 15 seconds, whatever the service. Not charged.
+  "019": "LIKELY DUPLICATE TRANSACTION (same recipient within 15 seconds)",
   "021": "ACCOUNT LOCKED",
   "022": "ACCOUNT SUSPENDED",
   "023": "API ACCESS NOT ENABLED FOR USER",

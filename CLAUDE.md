@@ -40,6 +40,11 @@ A wallet-based VTU (virtual top-up) platform for Nigeria. Users fund a wallet by
   - `request_id`: first 12 characters = current Lagos time `YYYYMMDDHHmm` (Africa/Lagos, UTC+1), then a random suffix
   - Endpoints: `/balance`, `/service-variations?serviceID=...`, `/pay`, `/requery`
   - Sandbox test phone: `08011111111`
+  - Learned from the real sandbox (differs from or isn't in the docs):
+    - Profile → API Keys → **API authentication type** must be "All" or "API Keys". On "Basic", VTpass ignores the keys: HTTP 401 plain-text `"Invalid Credentials."`.
+    - Products are off by default. Enable each one in Profile → **Product Settings** (sandbox and live separately), else code `028`.
+    - Code `019` "likely duplicate": any new purchase to the **same recipient within 15 seconds**, whatever the service (docs say 30s, same service). Not charged → failed → refund. The purchase flow should tell customers to wait ~15s, not just show "failed".
+    - The status mapping and the codes still unconfirmed are documented in `packages/core/src/providers/vtpass/status-map.ts`.
 - **Wallet funding:** Monnify or Paystack virtual accounts (decide later; also build behind an adapter).
 
 ## Env vars (never commit real values)
