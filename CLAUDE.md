@@ -16,7 +16,7 @@ A wallet-based VTU (virtual top-up) platform for Nigeria. Users fund a wallet by
   - `packages/core` — business logic: wallet ledger, pricing, order flow, provider adapters
   - `packages/db` — Drizzle ORM schema + migrations (PostgreSQL)
   - `packages/shared` — shared types and Zod validation schemas used by web and mobile
-- **Database:** PostgreSQL (Neon or Supabase). Local dev via Docker.
+- **Database:** PostgreSQL on Neon (dev branch for development). Connected via `DATABASE_URL`; no Docker.
 - **Hosting:** Cloudflare Workers (OpenNext adapter) for web/API; Workers Paid plan before going live.
 - **Tests:** Vitest. Money code must have tests.
 
@@ -51,6 +51,13 @@ VTPASS_PUBLIC_KEY=
 VTPASS_SECRET_KEY=
 ```
 `.env*` files are git-ignored. Keep a `.env.example` with empty values.
+
+## Setup
+- I run Claude Code in two places, both on this GitHub repo: a **cloud environment** and my **desktop**.
+- **Env vars in the cloud** come from the cloud environment's settings (no `.env` file there).
+- **Env vars on my laptop** come from `.env.local` at the repo root (copy `.env.example`).
+- Real env vars win over `.env.local`. Use the Neon **dev** branch URL in both places, never production.
+- Docker is not available in the cloud, so nothing may depend on it.
 
 ## Working style
 - One feature per session. Plan first, show me the plan, then build.

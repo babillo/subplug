@@ -1,4 +1,8 @@
 {
   "extends": "@repo/config-typescript/library.json",
+  "compilerOptions": {
+    // Scripts run directly with Node (no build step), which needs the real ".ts" in imports.
+    "allowImportingTsExtensions": true
+  },
   "include": ["src", "*.ts"]
 }
