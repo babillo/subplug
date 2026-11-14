@@ -313,6 +313,34 @@ describe("createVtpassAdapterFromEnv", () => {
     expect(adapter.name).toBe("vtpass");
   });
 
+  it("trims stray spaces and line breaks from keys", async () => {
+    const fetchFn = fakeFetch({ body: { code: 1, contents: { balance: 1 } } });
+    const adapter = createVtpassAdapterFromEnv(
+      {
+        VTPASS_BASE_URL: ` ${BASE} `,
+        VTPASS_API_KEY: ` ${KEYS.apiKey}\r`,
+        VTPASS_PUBLIC_KEY: `${KEYS.publicKey} `,
+        VTPASS_SECRET_KEY: KEYS.secretKey,
+      },
+      { fetch: fetchFn },
+    );
+    await adapter.getBalance();
+    expect(fetchFn.mock.calls[0]?.[0]).toBe(`${BASE}/balance`);
+    expect(headersOf(fetchFn).get("api-key")).toBe(KEYS.apiKey);
+    expect(headersOf(fetchFn).get("public-key")).toBe(KEYS.publicKey);
+  });
+
+  it("treats a blank key as missing (VTpass would reject it as 'Invalid Credentials.')", () => {
+    const create = () =>
+      createVtpassAdapterFromEnv({
+        VTPASS_BASE_URL: BASE,
+        VTPASS_API_KEY: "   ",
+        VTPASS_PUBLIC_KEY: KEYS.publicKey,
+        VTPASS_SECRET_KEY: KEYS.secretKey,
+      });
+    expect(create).toThrow(/Missing VTpass settings: VTPASS_API_KEY\./);
+  });
+
   it("names the missing variables without printing any values", () => {
     const create = () =>
       createVtpassAdapterFromEnv({ VTPASS_BASE_URL: BASE, VTPASS_API_KEY: KEYS.apiKey });

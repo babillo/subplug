@@ -138,6 +138,15 @@ pnpm vtpass:check
 
 It never prints your keys. If a setting is missing it names the variable, not its value.
 
+Getting the sandbox keys: log in at sandbox.vtpass.com, open **Profile → API Keys**, and copy the
+API key, the public key (`PK_…`) and the secret key (`SK_…`) into `.env.local`. On that page, set
+**API authentication type** to **All** or **API Keys**. If it's left on **Basic**, VTpass ignores
+the keys and every request fails with HTTP 401 `"Invalid Credentials."`, even with correct keys.
+
+Products are **switched off by default**, separately in the sandbox and in live. Turn on each one we
+sell (start with MTN Airtime and MTN Data) at sandbox.vtpass.com → **Profile → Product Settings**.
+Otherwise purchases fail with code `028` "PRODUCT IS NOT WHITELISTED ON YOUR ACCOUNT".
+
 Watch mode while writing tests in `packages/core`:
 
 ```bash
