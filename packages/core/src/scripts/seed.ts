@@ -170,11 +170,10 @@ try {
           providerVariationCode: plan.code,
           providerPriceKobo: plan.priceKobo,
         });
-        // Placeholder: regular customers pay VTpass's price; resellers get 1% off (whole kobo).
+        // Placeholder: everyone pays VTpass's price (no profit, but never a loss). Set real
+        // prices in the admin panel (Products & prices).
         await upsertPrice(product.id, "regular", { priceKobo: plan.priceKobo });
-        await upsertPrice(product.id, "reseller", {
-          priceKobo: Math.floor((plan.priceKobo * 99) / 100),
-        });
+        await upsertPrice(product.id, "reseller", { priceKobo: plan.priceKobo });
       }
       console.log(
         `${n.label} data: ${plans.length} plans (${plans.map((p) => p.code).join(", ")})`,

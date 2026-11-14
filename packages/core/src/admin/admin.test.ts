@@ -10,6 +10,7 @@ import {
   adminErrorResponse,
   adjustWallet,
   assertAdmin,
+  getAdminOverview,
   getUserDetail,
   listAuditLog,
   listOrdersAdmin,
@@ -454,6 +455,27 @@ describe.skipIf(!hasTestDatabase)("admin actions (real PostgreSQL)", { timeout: 
       expect((await listOrdersAdmin(db, { status: "success" })).orders).toHaveLength(0);
     });
 
+    it("finds orders by the phone number they were sent to", async () => {
+      const customer = await newUser();
+      const { data } = await products();
+      const base = {
+        userId: customer.userId,
+        walletId: customer.walletId,
+        productId: data.id,
+        providerId: "vtpass",
+        faceValueKobo: 100_000,
+        amountKobo: 100_000,
+      };
+      await db.insert(schema.orders).values([
+        { ...base, requestId: "202611141000aaaa", recipientPhone: "08031234567" },
+        { ...base, requestId: "202611141000bbbb", recipientPhone: "08099999999" },
+      ]);
+      const found = await listOrdersAdmin(db, { phone: "0803 123" });
+      expect(found.orders.map((o) => o.recipientPhone)).toEqual(["08031234567"]);
+      // Only digits are used, so wildcards can't widen the search.
+      expect((await listOrdersAdmin(db, { phone: "%" })).orders).toHaveLength(2);
+    });
+
     it("lists all products with their provider cost and every tier price", async () => {
       const { data } = await products();
       const list = await listProductsAdmin(db);
@@ -487,6 +509,146 @@ describe.skipIf(!hasTestDatabase)("admin actions (real PostgreSQL)", { timeout: 
       expect(all.entries[0]).toMatchObject({ actorName: "Admin" });
       const one = await listAuditLog(db, { entityType: "price", entityId: `${data.id}:regular` });
       expect(one.entries).toHaveLength(1);
+    });
+  });
+});
+
+describe.skipIf(!hasTestDatabase)("admin overview (real PostgreSQL)", { timeout: 120_000 }, () => {
+  let db: Database;
+  let close: () => Promise<void>;
+  beforeAll(() => {
+    ({ db, close } = openTestDb());
+  });
+  afterAll(async () => {
+    await close();
+  });
+  beforeEach(async () => {
+    await resetDatabase(db);
+  });
+
+  it("is all zeros on an empty database, with wallets matching the ledger", async () => {
+    expect(await getAdminOverview(db)).toEqual({
+      today: {
+        salesKobo: 0,
+        successCount: 0,
+        failedCount: 0,
+        fundedKobo: 0,
+        fundingFeesKobo: 0,
+        fundingCount: 0,
+      },
+      pendingCount: 0,
+      stuckCount: 0,
+      customerCount: 0,
+      suspendedCount: 0,
+      walletsTotalKobo: 0,
+      ledgerTotalKobo: 0,
+      ledgerMatches: true,
+    });
+  });
+
+  it("counts today's sales and funding (Lagos day), pending and stuck orders, and wallet totals", async () => {
+    // Fixed clock: 14 Nov 2026, 10:00 in Lagos (09:00 UTC).
+    const now = new Date("2026-11-14T09:00:00Z");
+    const [user] = await db
+      .insert(schema.users)
+      .values({ fullName: "Ada Obi", email: "ada@example.test" })
+      .returning();
+    await db.insert(schema.users).values([
+      { fullName: "Suspended", email: "s@example.test", status: "suspended" },
+      { fullName: "Admin", email: "admin@example.test", role: "admin" },
+    ]);
+    const [wallet] = await db.insert(schema.wallets).values({ userId: user!.id }).returning();
+    await credit(db, { walletId: wallet!.id, amountKobo: 1_000_000, reason: "seed" });
+
+    await db.insert(schema.providers).values({ id: "vtpass", name: "VTpass" });
+    const [product] = await db
+      .insert(schema.products)
+      .values({
+        category: "data",
+        network: "mtn",
+        name: "MTN 1GB",
+        providerId: "vtpass",
+        providerServiceId: "mtn-data",
+        providerVariationCode: "mtn-1gb",
+        providerPriceKobo: 100_000,
+      })
+      .returning();
+
+    const order = (
+      requestId: string,
+      status: "pending" | "success" | "failed",
+      createdAt: string,
+      amountKobo: number,
+    ) => ({
+      requestId,
+      status,
+      createdAt: new Date(createdAt),
+      userId: user!.id,
+      walletId: wallet!.id,
+      productId: product!.id,
+      providerId: "vtpass",
+      recipientPhone: "08011111111",
+      faceValueKobo: amountKobo,
+      amountKobo,
+    });
+    await db.insert(schema.orders).values([
+      order("r1", "success", "2026-11-14T08:00:00Z", 100_000), // today
+      order("r2", "success", "2026-11-13T23:30:00Z", 50_000), // 00:30 Lagos: today
+      order("r3", "success", "2026-11-13T22:30:00Z", 70_000), // 23:30 Lagos yesterday: not today
+      order("r4", "failed", "2026-11-14T07:00:00Z", 20_000),
+      order("r5", "pending", "2026-11-14T08:30:00Z", 30_000),
+      order("r6", "pending", "2026-11-12T08:00:00Z", 40_000), // pending for 2 days: stuck
+    ]);
+    await db.insert(schema.fundingEvents).values([
+      {
+        walletId: wallet!.id,
+        gateway: "monnify",
+        gatewayReference: "f1",
+        amountKobo: 500_000,
+        feeKobo: 5_000,
+        status: "credited",
+        createdAt: new Date("2026-11-14T06:00:00Z"),
+      },
+      {
+        walletId: wallet!.id,
+        gateway: "monnify",
+        gatewayReference: "f2",
+        amountKobo: 900_000,
+        status: "rejected",
+        createdAt: new Date("2026-11-14T06:00:00Z"),
+      },
+    ]);
+
+    const overview = await getAdminOverview(db, now);
+    expect(overview.today).toEqual({
+      salesKobo: 150_000,
+      successCount: 2,
+      failedCount: 1,
+      fundedKobo: 500_000,
+      fundingFeesKobo: 5_000,
+      fundingCount: 1,
+    });
+    expect(overview).toMatchObject({
+      pendingCount: 2,
+      stuckCount: 1,
+      customerCount: 2, // admins aren't customers
+      suspendedCount: 1,
+      walletsTotalKobo: 1_000_000,
+      ledgerTotalKobo: 1_000_000,
+      ledgerMatches: true,
+    });
+  });
+
+  it("flags wallets that no longer match the ledger", async () => {
+    const [user] = await db.insert(schema.users).values({ fullName: "Ada" }).returning();
+    const [wallet] = await db.insert(schema.wallets).values({ userId: user!.id }).returning();
+    await credit(db, { walletId: wallet!.id, amountKobo: 10_000, reason: "seed" });
+    // Simulates a bug: the cached balance drifts from the ledger (never done by real code).
+    await db.execute(sql`update wallets set balance_kobo = 99999 where id = ${wallet!.id}`);
+    expect(await getAdminOverview(db)).toMatchObject({
+      walletsTotalKobo: 99_999,
+      ledgerTotalKobo: 10_000,
+      ledgerMatches: false,
     });
   });
 });

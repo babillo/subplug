@@ -19,3 +19,34 @@ export function nairaToKoboInput(text: string): number | null {
   if (!Number.isSafeInteger(naira) || naira <= 0) return null;
   return naira * 100;
 }
+
+/** ₦1 billion: a typo guard on admin amounts. */
+const MAX_ADMIN_KOBO = 100_000_000_000;
+
+/**
+ * An amount typed by an admin, in naira with up to 2 decimals ("1,500.50") → kobo, or null.
+ * Parsed as text (never via floats): "1,500.50" → 150050.
+ */
+export function adminNairaToKobo(text: string): number | null {
+  const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(text.trim().replace(/,/g, ""));
+  if (!match) return null;
+  const kobo = Number(match[1]) * 100 + Number((match[2] ?? "").padEnd(2, "0"));
+  if (!Number.isSafeInteger(kobo) || kobo <= 0 || kobo > MAX_ADMIN_KOBO) return null;
+  return kobo;
+}
+
+/** A discount percentage with up to 2 decimals ("2.5") → basis points (250); 0–99.99%. */
+export function percentToBps(text: string): number | null {
+  const match = /^(\d{1,2})(?:\.(\d{1,2}))?$/.exec(text.trim());
+  if (!match) return null;
+  return Number(match[1]) * 100 + Number((match[2] ?? "").padEnd(2, "0"));
+}
+
+/** Basis points → the shortest percentage text: 250 → "2.5", 100 → "1", 5 → "0.05". */
+export function bpsToPercent(bps: number): string {
+  const whole = Math.floor(bps / 100);
+  const rest = String(bps % 100)
+    .padStart(2, "0")
+    .replace(/0+$/, "");
+  return rest ? `${whole}.${rest}` : String(whole);
+}

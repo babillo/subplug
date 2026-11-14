@@ -4,29 +4,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { OrderList } from "@/components/order-list";
+import { StatementList } from "@/components/statement-list";
 import { Card, PageTitle } from "@/components/ui";
 import { requireUser } from "@/lib/server/current-user";
 import { getServices } from "@/lib/server/services";
 
 export const metadata: Metadata = { title: "History" };
-
-const timeFormat = new Intl.DateTimeFormat("en-NG", {
-  timeZone: "Africa/Lagos",
-  day: "numeric",
-  month: "short",
-  hour: "numeric",
-  minute: "2-digit",
-  hour12: true,
-});
-
-const REASONS: Record<string, string> = {
-  funding: "Wallet funded",
-  purchase: "Purchase",
-  refund: "Refund",
-  admin_credit: "Credit from support",
-  admin_debit: "Debit by support",
-  seed: "Test credit",
-};
 
 export default async function HistoryPage({
   searchParams,
@@ -90,34 +73,7 @@ async function Statement({ userId, limit, db }: { userId: string; limit: number;
         <span className="text-muted">Balance now</span>
         <b className="num font-display text-lg">{formatNaira(balanceKobo)}</b>
       </div>
-      {entries.length === 0 ? (
-        <p className="py-6 text-center text-muted">No transactions yet.</p>
-      ) : (
-        <ul className="grid">
-          {entries.map((e) => (
-            <li
-              key={e.id}
-              className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-b border-line py-2.5 last:border-b-0"
-            >
-              <div className="min-w-0">
-                <div className="truncate text-sm font-semibold">
-                  {e.description ?? REASONS[e.reason] ?? e.reason}
-                </div>
-                <div className="text-xs text-muted">
-                  {REASONS[e.reason] ?? e.reason} · {timeFormat.format(new Date(e.createdAt))}
-                </div>
-              </div>
-              <div className="num grid justify-items-end text-sm">
-                <b className={e.direction === "credit" ? "text-ok" : ""}>
-                  {e.direction === "credit" ? "+" : "−"}
-                  {formatNaira(e.amountKobo)}
-                </b>
-                <span className="text-xs text-muted">{formatNaira(e.balanceAfterKobo)}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+      <StatementList entries={entries} />
       {hasMore && <MoreLink tab="statement" limit={limit} />}
     </div>
   );

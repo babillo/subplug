@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { Card, PageTitle } from "@/components/ui";
 import { requireUser } from "@/lib/server/current-user";
@@ -37,6 +38,14 @@ export default async function SettingsPage() {
             <ResetPin />
           </Card>
         </>
+      )}
+      {user.role === "admin" && user.status === "active" && (
+        <Link
+          href="/admin"
+          className="rounded-2xl border border-line bg-card p-4 font-semibold text-cobalt hover:border-cobalt"
+        >
+          Open the admin panel →
+        </Link>
       )}
       <SignOut />
     </>
