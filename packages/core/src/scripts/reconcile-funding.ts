@@ -11,10 +11,17 @@ const { db, close } = createDb();
 try {
   const summary = await reconcileFunding(db, createMonnifyGatewayFromEnv());
   console.log(
-    `Checked ${summary.accounts} account(s): ${summary.checked} new payment(s) looked up, ` +
-      `${summary.credited} credited, ${summary.notPaid} not paid yet, ` +
-      `${summary.unknownAccount} for unknown accounts, ${summary.errors} error(s).`,
+    `Checked ${summary.accounts} account(s). Monnify listed ${summary.listed} payment(s); ` +
+      `${summary.checked} new one(s) looked up, ${summary.credited} credited, ` +
+      `${summary.notPaid} not paid yet, ${summary.unknownAccount} for unknown accounts, ` +
+      `${summary.errors} error(s).`,
   );
+  if (summary.listed === 0) {
+    console.log(
+      "Monnify has no payments on these accounts yet. In the sandbox, send test payments with " +
+        "Monnify's payment simulator; real bank transfers don't reach sandbox accounts. See README.",
+    );
+  }
   if (summary.errors > 0) process.exitCode = 1;
 } catch (error) {
   console.error(error instanceof Error ? error.message : error);

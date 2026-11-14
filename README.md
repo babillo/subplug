@@ -168,8 +168,9 @@ Each customer gets their own bank account number. Money sent to it is credited t
 pnpm funding:account 22222222222
 ```
 
-3. **Send a test transfer** to that account number from Monnify's sandbox (dashboard or its test
-   transfer tool).
+3. **Send a test payment with Monnify's payment simulator** (websim.sdk.monnify.com → Transfer):
+   enter the account number and an amount. **Never send real money to sandbox account numbers**:
+   real bank transfers don't reach the sandbox.
 4. **Credit it.** Without a public URL Monnify can't reach your laptop's webhook, so use the backup
    job, which asks Monnify directly for each account's payments:
 

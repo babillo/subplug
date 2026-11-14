@@ -214,6 +214,8 @@ export async function handleFundingWebhook(
 
 export interface ReconcileSummary {
   accounts: number;
+  /** Payments the gateway listed across all accounts (new and already credited). */
+  listed: number;
   /** Payments asked about (already-recorded ones are skipped without asking). */
   checked: number;
   credited: number;
@@ -239,6 +241,7 @@ export async function reconcileFunding(
 
   const summary: ReconcileSummary = {
     accounts: references.length,
+    listed: 0,
     checked: 0,
     credited: 0,
     notPaid: 0,
@@ -257,6 +260,7 @@ export async function reconcileFunding(
       );
       continue;
     }
+    summary.listed += payments.length;
     for (const transactionReference of payments) {
       const [known] = await db
         .select({ id: fundingEvents.id })

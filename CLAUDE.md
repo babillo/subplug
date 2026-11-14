@@ -50,7 +50,7 @@ A wallet-based VTU (virtual top-up) platform for Nigeria. Users fund a wallet by
   - Crediting always re-asks Monnify for the paid amount and account; the webhook's own amount is never used. Monnify's sandbox may not sign webhooks: unsigned ones are accepted in sandbox only.
   - **Funding fee:** flat ₦50 per deposit, waived on deposits of ₦50 or less (placeholder; one place to change: `packages/core/src/funding/fees.ts`). Stored as `funding_events.fee_kobo`; the wallet is credited amount − fee.
   - Business: Monnify account exists under the owner's CAC "M-SALMAN VENTURES"; address verification pending, so sandbox/test mode only for now.
-  - Verified on the laptop: reserving accounts works (sandbox returned Sterling + Wema numbers; account name shown as "See", Monnify shortens names). Not yet verified: a real sandbox test transfer being credited, and the reserved-account transactions list format used by `funding:reconcile`.
+  - Verified on the laptop: reserving accounts works (sandbox returned Sterling + Wema numbers; account name shown as "See", Monnify shortens names). Not yet verified: a sandbox payment being credited. Sandbox accounts only receive payments from Monnify's payment simulator (websim.sdk.monnify.com), not real bank transfers. The transactions-list format used by `funding:reconcile` (`responseBody.content[].transactionReference`) matches how Monnify's own MCP server reads it.
 
 ## Env vars (never commit real values)
 ```
