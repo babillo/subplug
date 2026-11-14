@@ -10,7 +10,17 @@ import type { ErrorResponse } from "../orders/http.ts";
 import { settleOrder } from "../orders/purchase.ts";
 import { credit, debit, type MovementResult } from "../wallet/wallet.ts";
 
-const { auditLog, fundingAccounts, orders, prices, products, users, wallets } = schema;
+const {
+  auditLog,
+  fundingAccounts,
+  fundingEvents,
+  ledgerEntries,
+  orders,
+  prices,
+  products,
+  users,
+  wallets,
+} = schema;
 
 export type AdminErrorCode =
   "forbidden" | "not_found" | "invalid_input" | "price_below_cost" | "order_not_pending";
@@ -337,9 +347,12 @@ export async function listOrdersAdmin(
     status?: "pending" | "success" | "failed";
     stuckOnly?: boolean;
     userId?: string;
+    /** Part of the recipient's phone number; only its digits are used. */
+    phone?: string;
   } = {},
 ) {
   const { limit, offset } = pageOf(options);
+  const phoneDigits = options.phone?.replace(/\D/g, "") ?? "";
   const rows = await db
     .select({
       id: orders.id,
@@ -364,6 +377,7 @@ export async function listOrdersAdmin(
       and(
         options.status ? eq(orders.status, options.status) : undefined,
         options.userId ? eq(orders.userId, options.userId) : undefined,
+        phoneDigits ? ilike(orders.recipientPhone, `%${phoneDigits}%`) : undefined,
         options.stuckOnly
           ? and(
               eq(orders.status, "pending"),
@@ -437,6 +451,88 @@ export async function listAuditLog(
     .limit(limit + 1)
     .offset(offset);
   return { entries: rows.slice(0, limit), hasMore: rows.length > limit };
+}
+
+/** Turns a SQL bigint total (sent back as text) into a safe whole-kobo number. */
+function koboTotal(value: string | null | undefined): Kobo {
+  const total = Number(value ?? "0");
+  if (!Number.isSafeInteger(total)) throw new RangeError(`Total out of range: ${value}`);
+  return total;
+}
+
+/**
+ * The admin home screen's numbers. "Today" is the current day in Lagos.
+ * `ledgerMatches` compares every wallet's cached balance with the ledger (rule 1): if it is ever
+ * false, something wrote a balance without a ledger entry and needs investigating.
+ */
+export async function getAdminOverview(db: DbOrTx, now: Date = new Date()) {
+  const dayStart = sql`(date_trunc('day', ${now.toISOString()}::timestamptz at time zone 'Africa/Lagos') at time zone 'Africa/Lagos')`;
+  const [orderRow] = await db
+    .select({
+      salesKobo: sql<string>`coalesce(sum(${orders.amountKobo}) filter (where ${orders.status} = 'success' and ${orders.createdAt} >= ${dayStart}), 0)::text`,
+      successCount:
+        sql<number>`count(*) filter (where ${orders.status} = 'success' and ${orders.createdAt} >= ${dayStart})`.mapWith(
+          Number,
+        ),
+      failedCount:
+        sql<number>`count(*) filter (where ${orders.status} = 'failed' and ${orders.createdAt} >= ${dayStart})`.mapWith(
+          Number,
+        ),
+      pendingCount: sql<number>`count(*) filter (where ${orders.status} = 'pending')`.mapWith(
+        Number,
+      ),
+      stuckCount:
+        sql<number>`count(*) filter (where ${orders.status} = 'pending' and ${orders.createdAt} < ${now.toISOString()}::timestamptz - interval '24 hours')`.mapWith(
+          Number,
+        ),
+    })
+    .from(orders);
+  const [fundingRow] = await db
+    .select({
+      fundedKobo: sql<string>`coalesce(sum(${fundingEvents.amountKobo}), 0)::text`,
+      feesKobo: sql<string>`coalesce(sum(${fundingEvents.feeKobo}), 0)::text`,
+      count: count(),
+    })
+    .from(fundingEvents)
+    .where(
+      and(eq(fundingEvents.status, "credited"), sql`${fundingEvents.createdAt} >= ${dayStart}`),
+    );
+  const [userRow] = await db
+    .select({
+      customers: count(),
+      suspended: sql<number>`count(*) filter (where ${users.status} = 'suspended')`.mapWith(Number),
+    })
+    .from(users)
+    .where(eq(users.role, "customer"));
+  const [walletRow] = await db
+    .select({ total: sql<string>`coalesce(sum(${wallets.balanceKobo}), 0)::text` })
+    .from(wallets);
+  const [ledgerRow] = await db
+    .select({
+      total: sql<string>`coalesce(sum(case when ${ledgerEntries.direction} = 'credit'
+        then ${ledgerEntries.amountKobo} else -${ledgerEntries.amountKobo} end), 0)::text`,
+    })
+    .from(ledgerEntries);
+
+  const walletsTotalKobo = koboTotal(walletRow?.total);
+  const ledgerTotalKobo = koboTotal(ledgerRow?.total);
+  return {
+    today: {
+      salesKobo: koboTotal(orderRow?.salesKobo),
+      successCount: orderRow?.successCount ?? 0,
+      failedCount: orderRow?.failedCount ?? 0,
+      fundedKobo: koboTotal(fundingRow?.fundedKobo),
+      fundingFeesKobo: koboTotal(fundingRow?.feesKobo),
+      fundingCount: fundingRow?.count ?? 0,
+    },
+    pendingCount: orderRow?.pendingCount ?? 0,
+    stuckCount: orderRow?.stuckCount ?? 0,
+    customerCount: userRow?.customers ?? 0,
+    suspendedCount: userRow?.suspended ?? 0,
+    walletsTotalKobo,
+    ledgerTotalKobo,
+    ledgerMatches: walletsTotalKobo === ledgerTotalKobo,
+  };
 }
 
 const ADMIN_STATUS: Record<AdminErrorCode, number> = {
