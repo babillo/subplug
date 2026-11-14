@@ -1,10 +1,16 @@
 // Real calls to the VTpass SANDBOX (no real money). Skipped unless VTPASS_API_KEY is set,
 // e.g. in .env.local on the laptop. Run with: pnpm --filter @repo/core test:integration
 //
+// Before running: on sandbox.vtpass.com, Profile → Product Settings, switch on (whitelist)
+// MTN Airtime and MTN Data. Products are off by default; VTpass replies 028 otherwise.
+//
 // Sandbox test numbers (vtpass.com/documentation/mtn-airtime-vtu):
 //   08011111111  → success     201000000000 → pending     any other number → failed
+// Each test buys a different service/number pair: VTpass rejects the same service for the same
+// number within 30 seconds (code 019), which would make these tests flaky.
 import { describe, expect, it } from "vitest";
 
+import type { PurchaseOrder, PurchaseResult } from "../types.ts";
 import { createVtpassAdapterFromEnv } from "./adapter.ts";
 import { generateRequestId } from "./request-id.ts";
 
@@ -13,9 +19,22 @@ const SUCCESS_PHONE = "08011111111";
 const PENDING_PHONE = "201000000000";
 const FAILED_PHONE = "08022222222";
 
-describe.skipIf(!hasKeys)("VTpass sandbox (real HTTP)", { timeout: 60_000 }, () => {
-  const adapter = () => createVtpassAdapterFromEnv();
+const adapter = () => createVtpassAdapterFromEnv();
+const show = (result: PurchaseResult) => JSON.stringify(result.raw);
 
+/** Buys, but stops with a clear instruction if the sandbox account hasn't enabled the product. */
+async function buy(order: Omit<PurchaseOrder, "requestId"> & { requestId?: string }) {
+  const result = await adapter().purchase({ requestId: generateRequestId(), ...order });
+  if (result.providerCode === "028") {
+    throw new Error(
+      `VTpass sandbox: "${order.serviceId}" is not switched on for your account (code 028). ` +
+        "Enable it at sandbox.vtpass.com → Profile → Product Settings, then rerun.",
+    );
+  }
+  return result;
+}
+
+describe.skipIf(!hasKeys)("VTpass sandbox (real HTTP)", { timeout: 60_000 }, () => {
   it("refuses to run against live VTpass", () => {
     expect(process.env.VTPASS_BASE_URL).toContain("sandbox.vtpass.com");
   });
@@ -34,68 +53,61 @@ describe.skipIf(!hasKeys)("VTpass sandbox (real HTTP)", { timeout: 60_000 }, () 
     }
   });
 
-  it("buys ₦100 MTN airtime for the success test number, then requery agrees", async () => {
+  it("buys ₦100 MTN airtime; requery agrees; resending the same request_id never reports failed", async () => {
     const requestId = generateRequestId();
-    const result = await adapter().purchase({
+    const order = {
       requestId,
       serviceId: "mtn",
       recipientPhone: SUCCESS_PHONE,
       amountKobo: 10_000,
-    });
-    expect(result.status, JSON.stringify(result.raw)).toBe("success");
-
-    const again = await adapter().requery(requestId);
-    expect(again.status, JSON.stringify(again.raw)).toBe("success");
-  });
-
-  it("never reports failed when the same request_id is sent twice (no refund of a delivered order)", async () => {
-    const order = {
-      requestId: generateRequestId(),
-      serviceId: "mtn",
-      recipientPhone: SUCCESS_PHONE,
-      amountKobo: 10_000,
     };
-    await adapter().purchase(order);
-    const retry = await adapter().purchase(order);
-    expect(retry.status, JSON.stringify(retry.raw)).not.toBe("failed");
+
+    const first = await buy(order);
+    expect(first.status, show(first)).toBe("success");
+
+    const requeried = await adapter().requery(requestId);
+    expect(requeried.status, show(requeried)).toBe("success");
+
+    // A retry with the same request_id must never come back "failed": that would refund a
+    // delivered order. VTpass should recognise the id (014) or return the original result.
+    const resent = await buy(order);
+    expect(resent.status, show(resent)).not.toBe("failed");
   });
 
   it("buys MTN data for the success test number using a real plan code", async () => {
     const { variations } = await adapter().getVariations("mtn-data");
     const plan = variations.find((v) => v.fixedPrice && v.priceKobo > 0 && v.priceKobo % 100 === 0);
     expect(plan).toBeDefined();
-    const result = await adapter().purchase({
-      requestId: generateRequestId(),
+    const result = await buy({
       serviceId: "mtn-data",
       recipientPhone: SUCCESS_PHONE,
       amountKobo: plan!.priceKobo,
       variationCode: plan!.code,
     });
-    expect(result.status, JSON.stringify(result.raw)).toBe("success");
+    expect(result.status, show(result)).toBe("success");
   });
 
   it("reports pending for the pending test number", async () => {
-    const result = await adapter().purchase({
-      requestId: generateRequestId(),
+    const result = await buy({
       serviceId: "mtn",
       recipientPhone: PENDING_PHONE,
       amountKobo: 10_000,
     });
-    expect(result.status, JSON.stringify(result.raw)).toBe("pending");
+    expect(result.status, show(result)).toBe("pending");
   });
 
   it("reports failed for any other number", async () => {
-    const result = await adapter().purchase({
-      requestId: generateRequestId(),
+    const result = await buy({
       serviceId: "mtn",
       recipientPhone: FAILED_PHONE,
       amountKobo: 10_000,
     });
-    expect(result.status, JSON.stringify(result.raw)).toBe("failed");
+    expect(result.status, show(result)).toBe("failed");
   });
 
-  it("requery of an unknown request_id is failed (VTpass never received it)", async () => {
+  it("requery of an unknown request_id is failed with 015 (VTpass never received it)", async () => {
     const result = await adapter().requery(generateRequestId());
-    expect(result.status, JSON.stringify(result.raw)).toBe("failed");
+    expect(result.status, show(result)).toBe("failed");
+    expect(result.providerCode, show(result)).toBe("015");
   });
 });
