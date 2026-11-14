@@ -177,9 +177,15 @@ importers:
 
   packages/core:
     dependencies:
+      '@repo/db':
+        specifier: workspace:*
+        version: link:../db
       '@repo/shared':
         specifier: workspace:*
         version: link:../shared
+      drizzle-orm:
+        specifier: ^0.45.4
+        version: 0.45.4(@types/pg@8.23.1)(pg@8.23.1)
     devDependencies:
       '@repo/config-eslint':
         specifier: workspace:*
@@ -187,9 +193,6 @@ importers:
       '@repo/config-typescript':
         specifier: workspace:*
         version: link:../config-typescript
-      '@repo/db':
-        specifier: workspace:*
-        version: link:../db
       '@types/node':
         specifier: ^22
         version: 22.20.5

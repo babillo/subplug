@@ -1,3 +1,8 @@
-// Drizzle table definitions live in this folder (users, wallets, ledger_entries, ...).
-// They are added in the "Database schema + wallet ledger" step.
-export {};
+// Drizzle table definitions. All money columns are integer kobo (₦1 = 100 kobo).
+export * from "./audit.ts";
+export * from "./catalog.ts";
+export * from "./enums.ts";
+export * from "./funding.ts";
+export * from "./ledger.ts";
+export * from "./orders.ts";
+export * from "./users.ts";

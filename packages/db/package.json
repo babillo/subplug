@@ -5,13 +5,13 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./env": "./src/env.ts"
+    "./env": "./src/env.ts",
+    "./migrate": "./src/migrate.ts"
   },
   "scripts": {
     "check": "node --disable-warning=ExperimentalWarning src/scripts/check.ts",
     "generate": "drizzle-kit generate",
     "migrate": "node --disable-warning=ExperimentalWarning src/scripts/migrate.ts",
-    "seed": "node --disable-warning=ExperimentalWarning src/scripts/seed.ts",
     "studio": "drizzle-kit studio",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"

@@ -50,6 +50,7 @@ A wallet-based VTU (virtual top-up) platform for Nigeria. Users fund a wallet by
 ## Env vars (never commit real values)
 ```
 DATABASE_URL=
+TEST_DATABASE_URL=   # separate DB for tests (they wipe it); never the same as DATABASE_URL
 VTPASS_BASE_URL=https://sandbox.vtpass.com/api
 VTPASS_API_KEY=
 VTPASS_PUBLIC_KEY=
@@ -63,7 +64,7 @@ VTPASS_SECRET_KEY=
 - **Env vars on my laptop** come from `.env.local` at the repo root (copy `.env.example`).
 - Real env vars win over `.env.local`.
 - Docker is not available in the cloud, so nothing may depend on it.
-- **Neon project:** "SubPlug project" (`nameless-poetry-89567642`). Development uses its `dev` branch, never `production`. Ignore "my-first-project" (`broad-sunset-24732751`); it is unused.
+- **Neon project:** "SubPlug project" (`nameless-poetry-89567642`). Development uses its `dev` branch, never `production`. Its `test` branch (endpoint `ep-little-violet-…`) is for `TEST_DATABASE_URL` on the laptop; tests wipe it. Ignore "my-first-project" (`broad-sunset-24732751`); it is unused.
 - **Cloud sessions cannot connect to Postgres directly** (their network only allows HTTPS, not raw TCP on port 5432). So:
   - Database work against Neon (migrations, seed, real sandbox purchases) runs on my laptop.
   - Automated DB tests in the cloud use a throwaway local PostgreSQL installed in the container, not Neon.
