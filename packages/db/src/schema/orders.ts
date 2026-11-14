@@ -8,6 +8,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -21,6 +22,11 @@ export const orders = pgTable(
     id: uuid().primaryKey().defaultRandom(),
     /** Sent to the provider. Unique: a retry reuses it, so the provider can't deliver twice. */
     requestId: text().notNull().unique(),
+    /**
+     * Optional id the app generates when the customer taps "Buy". A retry or double-tap with the
+     * same id returns the original order instead of charging again. Unique per user.
+     */
+    clientReference: text(),
     userId: uuid()
       .notNull()
       .references(() => users.id),
@@ -41,6 +47,8 @@ export const orders = pgTable(
     amountKobo: bigint({ mode: "number" }).notNull(),
     status: orderStatus().notNull().default("pending"),
     providerCode: text(),
+    /** The provider's human-readable message for the latest reply. */
+    providerMessage: text(),
     providerReference: text(),
     /** The provider's latest reply, for logs and disputes. */
     providerResponse: jsonb(),
@@ -56,6 +64,11 @@ export const orders = pgTable(
     check("orders_amount_positive", sql`${t.amountKobo} > 0`),
     check("orders_face_value_positive", sql`${t.faceValueKobo} > 0`),
     index("orders_user_created_idx").on(t.userId, t.createdAt),
+    uniqueIndex("orders_user_client_reference_unique")
+      .on(t.userId, t.clientReference)
+      .where(sql`${t.clientReference} is not null`),
+    // For the "same number within 15 seconds" check (VTpass code 019).
+    index("orders_recipient_created_idx").on(t.recipientPhone, t.createdAt),
     // The re-check job looks for old pending orders.
     index("orders_pending_idx")
       .on(t.createdAt)

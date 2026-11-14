@@ -10,7 +10,7 @@ if (existsSync(rootEnvFile)) process.loadEnvFile(rootEnvFile);
 
 const nextConfig: NextConfig = {
   // Our workspace packages ship TypeScript source; Next compiles them for us.
-  transpilePackages: ["@repo/core", "@repo/shared"],
+  transpilePackages: ["@repo/core", "@repo/db", "@repo/shared"],
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

@@ -19,7 +19,9 @@
     "db:migrate": "pnpm --filter @repo/db migrate",
     "db:seed": "pnpm --filter @repo/core seed",
     "db:studio": "pnpm --filter @repo/db studio",
-    "vtpass:check": "pnpm --filter @repo/core vtpass:check"
+    "vtpass:check": "pnpm --filter @repo/core vtpass:check",
+    "orders:recheck": "pnpm --filter @repo/core orders:recheck",
+    "orders:try": "pnpm --filter @repo/core orders:try"
   },
   "devDependencies": {
     "prettier": "^3.10.1",

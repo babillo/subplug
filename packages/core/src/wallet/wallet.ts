@@ -11,6 +11,7 @@
 import { type DbOrTx, schema } from "@repo/db";
 import { and, eq, sql } from "drizzle-orm";
 
+import { isUniqueViolation } from "../db-errors.ts";
 import type { Kobo } from "../money.ts";
 
 const { auditLog, fundingEvents, ledgerEntries, wallets } = schema;
@@ -236,13 +237,6 @@ function sameMovementOrThrow(
     );
   }
   return { entry: existing, duplicate: true };
-}
-
-function isUniqueViolation(error: unknown): boolean {
-  for (let e: unknown = error; e; e = (e as { cause?: unknown }).cause) {
-    if ((e as { code?: unknown }).code === "23505") return true;
-  }
-  return false;
 }
 
 async function move(

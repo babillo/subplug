@@ -13,7 +13,9 @@
     "vtpass:check": "node --disable-warning=ExperimentalWarning src/scripts/vtpass-check.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "seed": "node --disable-warning=ExperimentalWarning src/scripts/seed.ts"
+    "seed": "node --disable-warning=ExperimentalWarning src/scripts/seed.ts",
+    "orders:recheck": "node --disable-warning=ExperimentalWarning src/scripts/recheck-orders.ts",
+    "orders:try": "node --disable-warning=ExperimentalWarning src/scripts/try-order.ts"
   },
   "dependencies": {
     "@repo/db": "workspace:*",

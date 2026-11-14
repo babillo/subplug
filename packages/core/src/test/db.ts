@@ -5,6 +5,8 @@
 import { createDb, type Database } from "@repo/db";
 import { sql } from "drizzle-orm";
 
+import { pgErrorCode } from "../db-errors.ts";
+
 export const testDatabaseUrl = process.env.TEST_DATABASE_URL?.trim() || undefined;
 
 /** True when database tests can run. When false, they are skipped with a visible message. */
@@ -47,12 +49,4 @@ export async function resetDatabase(db: Database): Promise<void> {
       await new Promise((resolve) => setTimeout(resolve, 1_000 * attempt));
     }
   }
-}
-
-function pgErrorCode(error: unknown): string | undefined {
-  for (let e: unknown = error; e; e = (e as { cause?: unknown }).cause) {
-    const code = (e as { code?: unknown }).code;
-    if (typeof code === "string") return code;
-  }
-  return undefined;
 }
