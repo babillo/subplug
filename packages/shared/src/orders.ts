@@ -84,3 +84,12 @@ export function parseCreateOrderRequest(body: unknown): ParseResult<CreateOrderR
     },
   };
 }
+
+/**
+ * What the customer pays for airtime: the face value minus their discount. The discount is
+ * rounded down, so we never give away a fraction of a kobo.
+ * Display only: the server works out the real charge.
+ */
+export function airtimeCostKobo(faceValueKobo: number, discountBps: number): number {
+  return faceValueKobo - Math.floor((faceValueKobo * discountBps) / 10_000);
+}

@@ -9,7 +9,8 @@
     "./orders": "./src/orders.ts",
     "./money": "./src/money.ts",
     "./networks": "./src/networks.ts",
-    "./plans": "./src/plans.ts"
+    "./plans": "./src/plans.ts",
+    "./api": "./src/api.ts"
   },
   "scripts": {
     "test": "vitest run",
