@@ -11,8 +11,10 @@ if (existsSync(rootEnvFile)) process.loadEnvFile(rootEnvFile);
 const nextConfig: NextConfig = {
   // Our workspace packages ship TypeScript source; Next compiles them for us.
   transpilePackages: ["@repo/core", "@repo/db", "@repo/shared"],
-  cacheComponents: true,
-  partialPrefetching: true,
+  // Hide the floating Next.js badge in development (it covers the phone tab bar).
+  devIndicators: false,
+  // Cache Components is off on purpose: almost every screen is personal and live (balances,
+  // orders), so plain per-request rendering is simpler. Revisit during hardening (step 8).
   turbopack: {
     rules: {
       "*.css": {

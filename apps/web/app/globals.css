@@ -1,26 +1,81 @@
 @import "tailwindcss";
 
+/*
+  Design tokens: the ONE place colours live (from the 6b moodboard). The owner's Figma redesign
+  replaces these values; components only use the token names (bg-ink, text-cobalt, …).
+*/
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --ink: #12223b;
+  --cobalt: #2557f6;
+  --cobalt-strong: #1b45d6;
+  --cobalt-soft: #e8eeff;
+  --paper: #f6f8fc;
+  --card: #ffffff;
+  --line: #dde3ee;
+  --muted: #5d6b82;
+  --fg: #12223b;
+  --on-ink: #ffffff;
+  --ok: #138a4b;
+  --ok-soft: #e3f5ea;
+  --warn: #b26a00;
+  --warn-soft: #fdf1dc;
+  --bad: #c42b2b;
+  --bad-soft: #fde7e7;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --ink: #1b2d4b;
+    --cobalt: #6d8dff;
+    --cobalt-strong: #8aa3ff;
+    --cobalt-soft: #1c2a52;
+    --paper: #0c1424;
+    --card: #121d32;
+    --line: #22314d;
+    --muted: #9aa8c0;
+    --fg: #e8eef8;
+    --ok: #4cc883;
+    --ok-soft: #12301f;
+    --warn: #f0b04d;
+    --warn-soft: #33260d;
+    --bad: #ff7a7a;
+    --bad-soft: #3a1717;
+    color-scheme: dark;
   }
 }
 
+@theme inline {
+  --color-ink: var(--ink);
+  --color-cobalt: var(--cobalt);
+  --color-cobalt-strong: var(--cobalt-strong);
+  --color-cobalt-soft: var(--cobalt-soft);
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-line: var(--line);
+  --color-muted: var(--muted);
+  --color-fg: var(--fg);
+  --color-on-ink: var(--on-ink);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --font-sans: var(--font-manrope), "Segoe UI", system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), "Segoe UI", system-ui, sans-serif;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--fg);
+  font-family: var(--font-sans);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--cobalt);
+  outline-offset: 2px;
 }
