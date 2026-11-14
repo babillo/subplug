@@ -224,6 +224,12 @@ describe.skipIf(!hasTestDatabase)("purchase flow (real PostgreSQL)", { timeout: 
         amountKobo: 100_000,
         referenceId: order.id,
       });
+      // The customer's statement gets plain words, never the provider's technical message
+      // (that stays on the order for admins).
+      expect(refundEntry!.description).toBe(
+        `Refund: purchase for ${order.recipientPhone} didn’t go through`,
+      );
+      expect(refundEntry!.description).not.toContain("TRANSACTION FAILED");
     });
 
     it("refunds when the adapter refuses the order before sending it", async () => {

@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@expo-google-fonts/manrope": "^0.4.3",
+    "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
     "@expo/ui": "~58.0.28",
     "@repo/shared": "workspace:*",
     "expo": "~58.0.25",
+    "expo-clipboard": "~58.0.4",
     "expo-constants": "~58.0.16",
     "expo-device": "~58.0.5",
     "expo-font": "~58.0.12",
@@ -13,6 +16,7 @@
     "expo-image": "~58.0.18",
     "expo-linking": "~58.0.17",
     "expo-router": "~58.0.31",
+    "expo-secure-store": "~58.0.3",
     "expo-splash-screen": "~58.0.14",
     "expo-status-bar": "~58.0.5",
     "expo-symbols": "~58.0.5",
@@ -41,8 +45,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
-    "reset-project": "node ./scripts/reset-project.js"
+    "typecheck": "tsc --noEmit"
   },
   "private": true
 }

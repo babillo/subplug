@@ -4,7 +4,7 @@
 import type { CatalogItem } from "@repo/core";
 import { formatNaira, nairaToKoboInput } from "@repo/shared/money";
 import { guessNetwork, NETWORKS, type NetworkId } from "@repo/shared/networks";
-import { normaliseNigerianPhone } from "@repo/shared/orders";
+import { airtimeCostKobo, normaliseNigerianPhone } from "@repo/shared/orders";
 import { PLAN_GROUPS, planGroup, type PlanGroup, planSummary } from "@repo/shared/plans";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -74,7 +74,7 @@ export function BuyFlow({
     mode === "data"
       ? (plan?.priceKobo ?? null)
       : faceKobo !== null && airtimeProduct?.discountBps != null
-        ? faceKobo - Math.floor((faceKobo * airtimeProduct.discountBps) / 10_000)
+        ? airtimeCostKobo(faceKobo, airtimeProduct.discountBps)
         : null;
 
   const normalisedPhone = normaliseNigerianPhone(phone);

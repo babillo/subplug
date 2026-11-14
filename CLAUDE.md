@@ -67,6 +67,7 @@ MONNIFY_CONTRACT_CODE=
 AUTH_SECRET=         # ≥32 random chars (openssl rand -hex 32); keys one-time code hashes
 OTP_SENDER=console   # "console" prints sign-in codes in the server terminal (dev only); SMS/email provider later
 ```
+Mobile (`apps/mobile/.env.local`, not secret, built into the app): `EXPO_PUBLIC_API_URL` = the backend, e.g. the laptop's Wi-Fi address `http://192.168.x.x:3000` in development.
 `.env*` files are git-ignored. Keep a `.env.example` with empty values.
 
 ## Auth (step 5)
@@ -105,6 +106,6 @@ OTP_SENDER=console   # "console" prints sign-in codes in the server terminal (de
 4. Purchase flow: data + airtime, pending re-check, auto-refund ✅
 5. Auth (phone/email OTP) + transaction PIN ✅ (dev code sender; real SMS/email provider still to pick)
 6. Web dashboard + admin panel: 6a backend API ✅ (customer views, admin actions, audit); 6b customer UI (moodboard from Dribbble/Behance-style references, owner redesigns in Figma later); 6c admin UI
-7. Expo mobile app
+7. Expo mobile app ✅ (customer app in Expo Go: sign-in, PIN, buy, fund, history, settings; store builds with EAS, biometrics and push notifications later)
 8. Hardening: rate limits, admin 2FA, monitoring
 9. Phase 2: cable, electricity, reseller tier, referrals

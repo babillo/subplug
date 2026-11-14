@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { normaliseNigerianPhone, parseCreateOrderRequest } from "./orders.ts";
+import { airtimeCostKobo, normaliseNigerianPhone, parseCreateOrderRequest } from "./orders.ts";
 
 describe("normaliseNigerianPhone", () => {
   it.each([
@@ -86,5 +86,16 @@ describe("parseCreateOrderRequest", () => {
       "productId",
       "recipientPhone",
     ]);
+  });
+});
+
+describe("airtimeCostKobo", () => {
+  it.each([
+    [50_000, 100, 49_500], // ₦500 at 1% off → ₦495
+    [50_000, 250, 48_750],
+    [10_000, 0, 10_000],
+    [5_033, 100, 4_983], // discount 50.33 kobo rounds down to 50
+  ])("%s kobo at %s bps → %s kobo", (face, bps, cost) => {
+    expect(airtimeCostKobo(face, bps)).toBe(cost);
   });
 });

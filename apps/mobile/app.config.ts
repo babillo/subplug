@@ -27,11 +27,13 @@ const config: ExpoConfig = {
     predictiveBackGestureEnabled: false,
   },
   web: {
-    output: "server",
+    // One static page: the browser preview is for development only (the real app is native).
+    output: "single",
     favicon: "./assets/images/favicon.png",
   },
   plugins: [
     "expo-router",
+    "expo-secure-store",
     [
       "expo-splash-screen",
       {
