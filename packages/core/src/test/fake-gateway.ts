@@ -94,6 +94,10 @@ export class FakeGateway implements FundingGateway {
     };
   }
 
+  async checkConnection(): Promise<void> {
+    if (this.listError) throw this.listError;
+  }
+
   async listAccountPayments(accountReference: string): Promise<string[]> {
     if (this.listError) throw this.listError;
     return this.accountPayments.get(accountReference) ?? [];

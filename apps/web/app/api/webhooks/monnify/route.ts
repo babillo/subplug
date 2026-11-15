@@ -5,7 +5,7 @@
 import { handleFundingWebhook } from "@repo/core";
 
 import { logServerError } from "@/lib/server/responses";
-import { getServices } from "@/lib/server/services";
+import { cloudflareColo, getServices } from "@/lib/server/services";
 
 export async function POST(request: Request) {
   // The signature covers the exact bytes Monnify sent, so read the raw text, not parsed JSON.
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
   if (result.httpStatus === 500) {
     // Crediting failed (Monnify will retry): save why, so it shows on the admin System page.
     logServerError(
-      `POST /api/webhooks/monnify (payment ${result.transactionReference ?? "?"} not credited yet; Monnify will retry)`,
+      `POST /api/webhooks/monnify (payment ${result.transactionReference ?? "?"} not credited yet; Monnify will retry; ran in ${cloudflareColo() ?? "local"})`,
       new Error(result.reason ?? "unknown error"),
     );
   }

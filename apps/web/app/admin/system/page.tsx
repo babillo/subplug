@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { AdminMfaGate } from "@/components/admin/admin-mfa-gate";
 import { Badge, Stat } from "@/components/admin/bits";
+import { MonnifyCheck } from "@/components/admin/monnify-check";
 import { Card, Notice, PageTitle } from "@/components/ui";
 import { formatWhen } from "@/lib/format";
 import { getAdminAccess } from "@/lib/server/admin-page";
@@ -108,6 +109,14 @@ async function AdminSystemPage() {
       <p className="-mt-3 text-sm text-muted">
         The sandbox VTpass balance is play money; the live one is what you’ve paid VTpass.
       </p>
+
+      <Card className="grid gap-2">
+        <h2 className="font-display text-lg font-semibold">Monnify connection</h2>
+        <p className="text-sm text-muted">
+          Signs in to Monnify once with this site’s keys. Nothing is paid or changed.
+        </p>
+        <MonnifyCheck />
+      </Card>
 
       <Card className="grid gap-2">
         <h2 className="font-display text-lg font-semibold">Background jobs</h2>

@@ -57,6 +57,8 @@ export interface FundingGateway {
   verifyPayment(transactionReference: string): Promise<VerifiedPayment>;
   /** Recent transaction references paid into an account (for the backup job). */
   listAccountPayments(accountReference: string): Promise<string[]>;
+  /** Signs in afresh (no cached token) to prove the keys and connection work. Throws if not. */
+  checkConnection(): Promise<void>;
 }
 
 /** Thrown when the gateway can't answer. Never contains keys or tokens. */

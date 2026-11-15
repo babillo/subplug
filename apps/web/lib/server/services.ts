@@ -82,6 +82,20 @@ export function finishInBackground(work: Promise<unknown>): void {
   }
 }
 
+/**
+ * Which Cloudflare data centre is handling this request (e.g. "LOS" Lagos, "LHR" London,
+ * "IAD" Virginia), or null on the laptop. Useful when a partner treats regions differently.
+ */
+export function cloudflareColo(): string | null {
+  if (!onCloudflare()) return null;
+  try {
+    const cf = getCloudflareContext().cf as { colo?: string } | undefined;
+    return cf?.colo ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function getServices(): Services {
   if (!onCloudflare()) return (nodeServices ??= buildServices(createDb().db));
   const { env, ctx } = getCloudflareContext();
