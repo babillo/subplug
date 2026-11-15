@@ -8,14 +8,15 @@ import { createMonnifyGatewayFromEnv, MonnifyGateway } from "./gateway.ts";
 const SANDBOX = "https://sandbox.monnify.com";
 const KEYS = { apiKey: "MK_TEST_APIKEY123", secretKey: "SECRETKEY456", contractCode: "1234567890" };
 
-type FakeResponse = { status?: number; body: unknown } | Error;
+type FakeResponse = { status?: number; body: unknown } | { status?: number; raw: string } | Error;
 
 function fakeFetch(...responses: FakeResponse[]) {
   return vi.fn(async (_url: string | URL | Request, _init?: RequestInit) => {
     const next = responses.shift();
     if (!next) throw new Error("fakeFetch: no response queued");
     if (next instanceof Error) throw next;
-    return new Response(JSON.stringify(next.body), { status: next.status ?? 200 });
+    const text = "raw" in next ? next.raw : JSON.stringify(next.body);
+    return new Response(text, { status: next.status ?? 200 });
   });
 }
 
@@ -93,6 +94,23 @@ describe("authentication", () => {
       .getReservedAccount("user-1")
       .catch((e: unknown) => e);
     expect(error).toBeInstanceOf(FundingGatewayError);
+    expectNoSecrets(error);
+    // Says what Monnify answered, so the System page shows the real reason.
+    expect((error as Error).message).toContain("HTTP 401");
+    expect((error as Error).message).toContain("Invalid credentials");
+  });
+
+  it("explains a sign-in reply that isn't Monnify's usual format (e.g. a block page)", async () => {
+    const fetchFn = fakeFetch({
+      status: 403,
+      raw: "<html><head><title>Access denied</title></head><body>Request blocked</body></html>",
+    });
+    const error = await gatewayWith(fetchFn)
+      .getReservedAccount("user-1")
+      .catch((e: unknown) => e);
+    expect((error as Error).message).toMatch(/HTTP 403/);
+    expect((error as Error).message).toMatch(/Access denied.*Request blocked/);
+    expect((error as Error).message).not.toContain("<");
     expectNoSecrets(error);
   });
 });

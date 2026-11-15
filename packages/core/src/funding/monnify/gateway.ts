@@ -301,8 +301,19 @@ export class MonnifyGateway implements FundingGateway {
     message: string,
     response: { httpStatus: number; envelope: Envelope | null; text: string | null },
   ): FundingGatewayError {
-    const detail = response.envelope?.responseMessage;
-    return new FundingGatewayError(detail ? `${message}: ${detail}` : message, {
+    // Say what Monnify actually answered (never anything we sent, which holds the keys):
+    // its own message when it used its usual format, otherwise a short plain-text snippet.
+    const said =
+      response.envelope?.responseMessage ??
+      (response.text
+        ? response.text
+            .replace(/<[^>]*>/g, " ")
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 120)
+        : "");
+    const detail = `HTTP ${response.httpStatus}${said ? `: ${said}` : ""}`;
+    return new FundingGatewayError(`${message} (${detail})`, {
       gateway: GATEWAY,
       httpStatus: response.httpStatus,
       gatewayCode: response.envelope?.responseCode ?? null,
