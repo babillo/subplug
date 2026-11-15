@@ -3,8 +3,9 @@
 // - Mobile: the app sends "Authorization: Bearer <token>".
 // Cookie-signed-in requests that change something must come from our own site (Origin check), so
 // another website can't submit forms on the customer's behalf.
-import { type User } from "@repo/core";
+import { RATE_LIMITS, type User } from "@repo/core";
 
+import { rateLimited } from "./rate-limit";
 import { getServices } from "./services";
 
 export const SESSION_COOKIE = "session";
@@ -97,6 +98,11 @@ export async function requireAdmin(request: Request): Promise<User | Response> {
       { error: { code: "forbidden", message: "Admins only." } },
       { status: 403 },
     );
+  }
+  // Changes (not page views) are limited per admin, so a stolen session can't make thousands.
+  if (request.method !== "GET") {
+    const limited = await rateLimited(`admin:user:${user.id}`, RATE_LIMITS.adminActionsPerAdmin);
+    if (limited) return limited;
   }
   return user;
 }

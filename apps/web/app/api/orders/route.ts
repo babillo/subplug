@@ -16,6 +16,8 @@ import {
   readJson,
 } from "@/lib/server/responses";
 import { getSignedInUser, unauthorized } from "@/lib/server/session";
+import { RATE_LIMITS } from "@repo/core";
+import { rateLimited } from "@/lib/server/rate-limit";
 
 export async function GET(request: Request) {
   const user = await getSignedInUser(request);
@@ -31,6 +33,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const user = await getSignedInUser(request);
   if (!user) return unauthorized();
+  const limited = await rateLimited(`orders:user:${user.id}`, RATE_LIMITS.ordersPerUser);
+  if (limited) return limited;
 
   const body = await readJson(request);
   if (!body) return badRequest("Send a JSON body.");

@@ -3,6 +3,7 @@
 //      The BVN/NIN goes to Monnify only; we never store it.
 import {
   createFundingAccounts,
+  RATE_LIMITS,
   FundingError,
   FundingGatewayError,
   listFundingAccounts,
@@ -11,6 +12,7 @@ import {
 import { getServices } from "@/lib/server/services";
 import { readJson, str } from "@/lib/server/responses";
 import { getSignedInUser, unauthorized } from "@/lib/server/session";
+import { rateLimited } from "@/lib/server/rate-limit";
 
 type Account = { bankName: string; accountNumber: string; accountName: string };
 const view = (accounts: Account[]) =>
@@ -37,6 +39,12 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const user = await getSignedInUser(request);
   if (!user) return unauthorized();
+  // Each attempt calls Monnify, so keep it to a handful a day per customer.
+  const limited = await rateLimited(
+    `funding-accounts:user:${user.id}`,
+    RATE_LIMITS.fundingAccountsPerUser,
+  );
+  if (limited) return limited;
   const body = (await readJson(request)) ?? {};
 
   try {
