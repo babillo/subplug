@@ -11,13 +11,30 @@ export class ConsoleOtpSender implements OtpSender {
   }
 }
 
-/** Picks the sender from OTP_SENDER (default "console"). The console sender never runs in production. */
+/** Which deployment this is: the laptop, the private staging site, or the live site. */
+export type AppEnv = "development" | "staging" | "production";
+
+/**
+ * APP_ENV, if set (development | staging | production). Without it, a production build counts as
+ * production, so forgetting the setting can never make the live site less strict.
+ */
+export function getAppEnv(env: Record<string, string | undefined> = process.env): AppEnv {
+  const value = env.APP_ENV?.trim();
+  if (!value) return env.NODE_ENV === "production" ? "production" : "development";
+  if (value === "development" || value === "staging" || value === "production") return value;
+  throw new Error(`Unknown APP_ENV "${value}". Use development, staging or production.`);
+}
+
+/**
+ * Picks the sender from OTP_SENDER (default "console"). The console sender prints codes to the
+ * log: fine on the laptop and the private staging site, never on the live site.
+ */
 export function createOtpSenderFromEnv(
   env: Record<string, string | undefined> = process.env,
 ): OtpSender {
   const kind = env.OTP_SENDER?.trim() || "console";
   if (kind === "console") {
-    if (env.NODE_ENV === "production") {
+    if (getAppEnv(env) === "production") {
       throw new Error(
         "OTP_SENDER=console prints codes to the log; it can't be used in production.",
       );

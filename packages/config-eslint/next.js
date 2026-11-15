@@ -16,7 +16,15 @@ export const next = defineConfig([
     },
   },
   prettier,
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),
+  globalIgnores([
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+    // Cloudflare build output and local Wrangler state
+    ".open-next/**",
+    ".wrangler/**",
+  ]),
 ]);
 
 export default next;

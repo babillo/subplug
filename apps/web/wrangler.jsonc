@@ -1,0 +1,34 @@
+// Cloudflare Workers settings for the hosted site. NON-SECRET settings only: keys and passwords
+// are added with `wrangler secret put NAME` (see README → Deployment) and never live in a file.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // The staging site: sandbox VTpass/Monnify, Neon "staging" branch, no real money.
+  "name": "sauritop-staging",
+  "main": "./worker.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "sauritop-staging" }],
+  // The database, through Hyperdrive (keeps connections to Neon warm). Create it once with
+  // `npx wrangler hyperdrive create sauritop-staging --connection-string="..."` and paste the id.
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "REPLACE_WITH_HYPERDRIVE_ID",
+      // Only for `pnpm cf:preview` on a computer: a local test database, never Neon.
+      "localConnectionString": "postgres://sauritop_test:sauritop_test@localhost:5432/sauritop_dev",
+    },
+  ],
+  // Background jobs: every 5 minutes (which jobs run is decided in worker.ts).
+  "triggers": { "crons": ["*/5 * * * *"] },
+  "vars": {
+    "APP_ENV": "staging",
+    // Sign-in codes go to the Worker's live log (`npx wrangler tail`) until an SMS/email
+    // provider is chosen. Allowed on staging only; refused when APP_ENV=production.
+    "OTP_SENDER": "console",
+    "VTPASS_BASE_URL": "https://sandbox.vtpass.com/api",
+    "MONNIFY_BASE_URL": "https://sandbox.monnify.com",
+  },
+  // Keep request logs (incl. the console sign-in codes) viewable in the dashboard.
+  "observability": { "enabled": true },
+}

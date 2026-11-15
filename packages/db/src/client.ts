@@ -27,11 +27,26 @@ export function normaliseConnectionString(url: string): string {
  */
 export function createDb(
   url: string = getDatabaseUrl(),
-  options: { maxConnections?: number } = {},
+  options: {
+    maxConnections?: number;
+    /**
+     * Close each connection after this many uses. Cloudflare Workers: 1, so no connection
+     * outlives the request that opened it (Hyperdrive makes new connections cheap).
+     */
+    maxUses?: number;
+  } = {},
 ) {
   const pool = new pg.Pool({
     connectionString: normaliseConnectionString(url),
     max: options.maxConnections ?? 5,
+    ...(options.maxUses ? { maxUses: options.maxUses } : {}),
+  });
+  // An idle connection dropped by the server or runtime must not crash the app; the pool simply
+  // opens a new one next time.
+  pool.on("error", (error) => {
+    // On Cloudflare, connections are closed as each request finishes: expected, not a problem.
+    if (error.message === "This socket has been closed.") return;
+    console.warn("Database connection dropped:", error.message);
   });
   const db = drizzle({ client: pool, schema, casing: "snake_case" });
   return { db, pool, close: () => pool.end() };

@@ -7,7 +7,7 @@ import { FakeProvider } from "../test/fake-provider.ts";
 import { hasTestDatabase, openTestDb, resetDatabase } from "../test/db.ts";
 import { credit } from "../wallet/wallet.ts";
 import { listRecentErrors, recordError } from "./errors.ts";
-import { JOBS, runJobs } from "./jobs.ts";
+import { JOBS, jobsDueAt, runJobs } from "./jobs.ts";
 import { getSystemStatus } from "./status.ts";
 
 class RichProvider extends FakeProvider {
@@ -194,5 +194,23 @@ describe.skipIf(!hasTestDatabase)("monitoring (real PostgreSQL)", { timeout: 60_
       expect(status.errorsLast24h).toBe(1);
       expect(status.recentErrors).toHaveLength(2);
     });
+  });
+});
+
+describe("jobsDueAt (the 5-minute schedule)", () => {
+  const at = (iso: string) => jobsDueAt(new Date(iso));
+  it("re-checks orders every time", () => {
+    expect(at("2026-11-16T10:05:00Z")).toEqual(["orders.recheck"]);
+  });
+  it("checks Monnify on the quarter hour", () => {
+    expect(at("2026-11-16T10:15:00Z")).toEqual(["orders.recheck", "funding.reconcile"]);
+    expect(at("2026-11-16T10:45:00Z")).toEqual(["orders.recheck", "funding.reconcile"]);
+  });
+  it("cleans up once a day at 03:00 Lagos time (02:00 UTC)", () => {
+    expect(at("2026-11-16T02:00:00Z")).toEqual(["orders.recheck", "funding.reconcile", "cleanup"]);
+    expect(at("2026-11-16T03:00:00Z")).not.toContain("cleanup");
+  });
+  it("tolerates a schedule that fires a few seconds late", () => {
+    expect(at("2026-11-16T10:15:07Z")).toContain("funding.reconcile");
   });
 });

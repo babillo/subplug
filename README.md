@@ -221,6 +221,58 @@ so run them on the laptop after `pnpm db:migrate` and `pnpm db:seed`. `orders:re
 run any time; it will be scheduled on Cloudflare later. Orders pending for over 24 hours are listed
 for a human to check, never refunded automatically.
 
+## Deployment (staging)
+
+The hosted site runs on **Cloudflare Workers** (the Next.js app is converted by OpenNext), with the
+database on Neon's `staging` branch through **Hyperdrive** (keeps connections to Neon warm).
+**Cloudflare Workers Builds** builds and deploys it on Cloudflare's Linux machines whenever `main`
+changes (OpenNext doesn't support building on Windows). Staging uses sandbox VTpass/Monnify keys:
+no real money. Settings: `apps/web/wrangler.jsonc` (non-secret only); the background jobs run on a
+5-minute schedule from `apps/web/worker.ts`.
+
+One-time setup:
+
+1. **Cloudflare:** create an account and switch on **Workers Paid** ($5/month; the free plan's CPU
+   limit is too small for PIN checks).
+2. **Neon:** in the project `nameless-poetry-89567642`, pick the `staging` branch → **Connect** →
+   turn connection pooling **off** (Hyperdrive pools) → copy the connection string.
+3. **Database tables and products** (laptop, Git Bash), with that string in single quotes:
+
+   ```bash
+   DATABASE_URL='postgresql://…staging…' pnpm db:migrate
+   ```
+
+   ```bash
+   DATABASE_URL='postgresql://…staging…' pnpm db:seed
+   ```
+
+4. **Hyperdrive:** Cloudflare dashboard → Storage & Databases → Hyperdrive → **Create** → name
+   `sauritop-staging`, paste the same string. Send the ID to Claude (it isn't secret) to put in `apps/web/wrangler.jsonc`, or edit that line yourself.
+5. **Connect the repo:** Workers & Pages → Create → **Import a repository** → this GitHub repo:
+   - Project name: `sauritop-staging` · Production branch: `main` · Root directory: (empty)
+   - Build command: `pnpm --filter web cf:build`
+   - Deploy command: `pnpm --filter web exec opennextjs-cloudflare deploy`
+   - Build variable `NODE_VERSION` = `22`
+6. **Secrets:** the Worker → Settings → Variables and Secrets → add as **Secret**: `AUTH_SECRET`
+   (new: `openssl rand -hex 32`), `VTPASS_API_KEY`, `VTPASS_PUBLIC_KEY`, `VTPASS_SECRET_KEY`,
+   `MONNIFY_API_KEY`, `MONNIFY_SECRET_KEY`, `MONNIFY_CONTRACT_CODE` (sandbox values). Then
+   **Deployments → Retry/redeploy** so they take effect.
+7. **Sign-in codes:** until an SMS/email provider is chosen, they appear in the Worker's live logs
+   (dashboard → the Worker → **Logs**, or `npx wrangler tail sauritop-staging`). Staging only:
+   `APP_ENV=production` refuses this.
+8. **Admin:** sign up on the staging site, then (laptop)
+   `DATABASE_URL='…staging…' pnpm admin:grant 08012345678` (your number) and set up two-step
+   sign-in at `/admin`.
+9. **Monnify sandbox:** set the webhook URL to `https://<your-staging-address>/api/webhooks/monnify`.
+10. **Mobile:** set `EXPO_PUBLIC_API_URL` in `apps/mobile/.env.local` to the staging address.
+
+Check it: `https://<your-staging-address>/api/health` → `{"ok":true,…}`; `/admin/system` shows
+the background jobs running.
+
+To try the Cloudflare build on a Linux/macOS computer (not Windows): copy
+`apps/web/.dev.vars.example` to `apps/web/.dev.vars`, make a local test database called
+`sauritop_dev`, then `pnpm cf:preview`.
+
 ## Background jobs and monitoring
 
 ```bash

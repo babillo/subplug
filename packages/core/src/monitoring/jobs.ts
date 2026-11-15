@@ -123,3 +123,15 @@ export async function runJobs(deps: {
   }
   return results;
 }
+
+/**
+ * Which jobs are due when the 5-minute schedule fires (Cloudflare Cron "*\/5 * * * *"):
+ * re-check every time, Monnify on the quarter hour, clean-up daily at 03:00 Lagos (02:00 UTC).
+ */
+export function jobsDueAt(time: Date): JobName[] {
+  const minute = time.getUTCMinutes();
+  const due: JobName[] = ["orders.recheck"];
+  if (minute % 15 === 0) due.push("funding.reconcile");
+  if (time.getUTCHours() === 2 && minute === 0) due.push("cleanup");
+  return due;
+}
