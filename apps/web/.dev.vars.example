@@ -1,0 +1,9 @@
+# Only for `pnpm cf:preview` (the app running in Cloudflare's runtime on your computer).
+# Copy to apps/web/.dev.vars (git-ignored). Use sandbox/test values, never live keys.
+AUTH_SECRET=
+VTPASS_API_KEY=
+VTPASS_PUBLIC_KEY=
+VTPASS_SECRET_KEY=
+MONNIFY_API_KEY=
+MONNIFY_SECRET_KEY=
+MONNIFY_CONTRACT_CODE=

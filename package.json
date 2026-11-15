@@ -26,7 +26,9 @@
     "funding:account": "pnpm --filter @repo/core funding:account",
     "funding:reconcile": "pnpm --filter @repo/core funding:reconcile",
     "admin:grant": "pnpm --filter @repo/core admin:grant",
-    "admin:reset-2fa": "pnpm --filter @repo/core admin:reset-2fa"
+    "admin:reset-2fa": "pnpm --filter @repo/core admin:reset-2fa",
+    "deploy:staging": "pnpm --filter web deploy:staging",
+    "cf:preview": "pnpm --filter web cf:preview"
   },
   "devDependencies": {
     "prettier": "^3.10.1",

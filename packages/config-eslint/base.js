@@ -14,6 +14,8 @@ export const base = tseslint.config(
       "**/.turbo/**",
       "**/.next/**",
       "**/.expo/**",
+      "**/.open-next/**",
+      "**/.wrangler/**",
     ],
   },
   js.configs.recommended,
