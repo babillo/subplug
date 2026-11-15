@@ -60,13 +60,27 @@ function buildServices(db: Database): Services {
 }
 
 /** True inside Cloudflare Workers (the hosted site), false on the laptop. */
-function onCloudflare(): boolean {
+export function onCloudflare(): boolean {
   return typeof navigator !== "undefined" && navigator.userAgent === "Cloudflare-Workers";
 }
 
 let nodeServices: Services | undefined;
 /** Cloudflare: one set per request, keyed by the request's context and dropped with it. */
 const perRequest = new WeakMap<object, Services>();
+
+/**
+ * Lets work started during a request finish after the reply is sent. On Cloudflare, anything
+ * still running when the reply goes out is cancelled unless registered here; on the laptop the
+ * server simply keeps running it.
+ */
+export function finishInBackground(work: Promise<unknown>): void {
+  if (!onCloudflare()) return;
+  try {
+    getCloudflareContext().ctx.waitUntil(work);
+  } catch {
+    // Not inside a request (e.g. a script): nothing to extend.
+  }
+}
 
 export function getServices(): Services {
   if (!onCloudflare()) return (nodeServices ??= buildServices(createDb().db));
