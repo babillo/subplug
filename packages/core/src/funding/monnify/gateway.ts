@@ -94,6 +94,11 @@ export class MonnifyGateway implements FundingGateway {
     throw this.#error("Monnify refused to reserve the account", response);
   }
 
+  async checkConnection(): Promise<void> {
+    this.#token = null;
+    await this.#accessToken();
+  }
+
   async getReservedAccount(accountReference: string): Promise<ReservedAccounts | null> {
     const response = await this.#request(
       "GET",

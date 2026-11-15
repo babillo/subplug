@@ -138,6 +138,21 @@ describe("authentication", () => {
   });
 });
 
+describe("checkConnection", () => {
+  it("signs in afresh even with a cached token", async () => {
+    const fetchFn = fakeFetch(login(), ok(accountsBody), login());
+    const gateway = gatewayWith(fetchFn);
+    await gateway.getReservedAccount("user-1"); // caches a token
+    await gateway.checkConnection();
+    expect(call(fetchFn, 2).url).toBe(`${SANDBOX}/api/v1/auth/login`);
+  });
+
+  it("throws the sign-in error when Monnify refuses", async () => {
+    const fetchFn = fakeFetch({ status: 401, body: { error: "invalid_token" } });
+    await expect(gatewayWith(fetchFn).checkConnection()).rejects.toThrow(/HTTP 401/);
+  });
+});
+
 describe("reserveAccount", () => {
   it("POSTs the v2 reserved-account request with the contract code and BVN", async () => {
     const fetchFn = fakeFetch(login(), ok(accountsBody));
