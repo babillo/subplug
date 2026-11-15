@@ -80,6 +80,10 @@ Mobile (`apps/mobile/.env.local`, not secret, built into the app): `EXPO_PUBLIC_
 - Admins: `users.role` = `admin`, granted only with `pnpm admin:grant <email|phone>` (laptop, audited; no web route). Admin API under `/api/admin/*`; every change audited in the same transaction. Admin 2FA comes in step 8.
 - SMS provider: BulkSMSNigeria was cheapest on paper (₦6.49) but has poor reviews (delivery complaints) → rejected. Shortlist Termii (OTP/DND route, price on request) and VTpass Messaging; test delivery to DND numbers on MTN/Airtel/Glo before committing.
 
+## Hardening (step 8)
+- **Rate limits** (8a): counted in Postgres (`rate_limits` table, one atomic upsert per request; no extra service). All limits in one place: `packages/core/src/rate-limit/rate-limit.ts` (`RATE_LIMITS`, placeholders): sign-in codes 10/hour per IP, sign-in attempts 20/10 min per IP, purchases 10/min per customer, funding-account creation 5/day per customer, admin changes 60/min per admin (GETs not limited). Over the limit → HTTP 429 `rate_limited` + `Retry-After` + "Too many attempts. Please try again in N minutes." IP = Cloudflare's `cf-connecting-ip` in production (can't be faked); on the laptop all requests share one bucket unless `x-forwarded-for` is sent. Old rows: `cleanupRateLimits()` (wired into the jobs command in 8c).
+- **Security headers** (8a, `apps/web/next.config.ts`): CSP (self only; `'unsafe-inline'` scripts still allowed because Next and the theme script are inline; a nonce would remove it but forces per-request rendering), `frame-ancestors 'none'` + `X-Frame-Options: DENY`, `nosniff`, strict referrer, no camera/mic/location, HSTS in production, no `X-Powered-By`.
+
 ## Setup
 - I run Claude Code in two places, both on this GitHub repo: a **cloud environment** and my **desktop**.
 - **Env vars in the cloud** come from the cloud environment's settings (no `.env` file there).
@@ -108,5 +112,5 @@ Mobile (`apps/mobile/.env.local`, not secret, built into the app): `EXPO_PUBLIC_
 5. Auth (phone/email OTP) + transaction PIN ✅ (dev code sender; real SMS/email provider still to pick)
 6. Web dashboard + admin panel: 6a backend API ✅ (customer views, admin actions, audit); 6b customer UI (moodboard from Dribbble/Behance-style references, owner redesigns in Figma later); 6c admin UI
 7. Expo mobile app ✅ (customer app in Expo Go: sign-in, PIN, buy, fund, history, settings; store builds with EAS, biometrics and push notifications later)
-8. Hardening: rate limits, admin 2FA, monitoring
+8. Hardening: 8a rate limits + security headers ✅; 8b admin 2FA; 8c monitoring
 9. Phase 2: cable, electricity, reseller tier, referrals
