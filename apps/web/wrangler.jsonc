@@ -14,7 +14,7 @@
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      "id": "REPLACE_WITH_HYPERDRIVE_ID",
+      "id": "da52b6ae1ae848209d845e096346b0c2",
       // Only for `pnpm cf:preview` on a computer: a local test database, never Neon.
       "localConnectionString": "postgres://sauritop_test:sauritop_test@localhost:5432/sauritop_dev",
     },
