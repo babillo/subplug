@@ -246,8 +246,11 @@ One-time setup:
    DATABASE_URL='postgresql://…staging…' pnpm db:seed
    ```
 
-4. **Hyperdrive:** Cloudflare dashboard → Storage & Databases → Hyperdrive → **Create** → name
+4. **Hyperdrive:** Cloudflare dashboard → Storage & Databases → Hyperdrive → **Create** →
+   **Connect to public database** → name
    `sauritop-staging`, paste the same string. Its ID goes in `apps/web/wrangler.jsonc` (`"id"`; not secret). Staging: `da52b6ae1ae848209d845e096346b0c2`.
+   Then in its **Settings**, turn **caching OFF**. With caching on, Hyperdrive replays remembered
+   answers to reads for up to a minute, so balances and new account numbers show stale values.
 5. **Connect the repo:** Workers & Pages → Create → **Import a repository** → this GitHub repo:
    - Project name: `sauritop-staging` · Production branch: `main` · Root directory: (empty)
    - Build command: `pnpm --filter web cf:build`
