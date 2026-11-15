@@ -36,5 +36,12 @@ export async function POST(request: Request) {
     creditedKobo: result.creditedKobo,
     reason: result.reason,
   });
+  if (result.httpStatus === 500) {
+    // Crediting failed (Monnify will retry): save why, so it shows on the admin System page.
+    logServerError(
+      `POST /api/webhooks/monnify (payment ${result.transactionReference ?? "?"} not credited yet; Monnify will retry)`,
+      new Error(result.reason ?? "unknown error"),
+    );
+  }
   return Response.json({ received: result.httpStatus === 200 }, { status: result.httpStatus });
 }
