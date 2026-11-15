@@ -38,7 +38,27 @@ export const sessions = pgTable(
       .references(() => users.id),
     tokenHash: text().notNull().unique(),
     expiresAt: timestamp({ withTimezone: true }).notNull(),
+    /** Admins: when this session last passed the two-step code. Admin access lasts 12 hours. */
+    mfaVerifiedAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("sessions_user_idx").on(t.userId)],
+);
+
+/**
+ * Admin backup codes for two-step sign-in (if the phone is lost). Each works once. Stored only as
+ * an HMAC (keyed with AUTH_SECRET), like sign-in codes; the readable codes are shown once.
+ */
+export const adminRecoveryCodes = pgTable(
+  "admin_recovery_codes",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id),
+    codeHash: text().notNull(),
+    usedAt: timestamp({ withTimezone: true }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("admin_recovery_codes_user_idx").on(t.userId)],
 );

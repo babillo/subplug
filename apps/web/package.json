@@ -14,6 +14,7 @@
     "@repo/db": "workspace:*",
     "@repo/shared": "workspace:*",
     "next": "16.4.6",
+    "qrcode": "^1.5.4",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
@@ -22,6 +23,7 @@
     "@repo/config-typescript": "workspace:*",
     "@tailwindcss/turbopack": "4.3.3",
     "@types/node": "^22",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9.39.0",

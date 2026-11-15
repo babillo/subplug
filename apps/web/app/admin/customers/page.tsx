@@ -7,12 +7,21 @@ import { Badge, ShowMore } from "@/components/admin/bits";
 import { Button, Card, PageTitle } from "@/components/ui";
 import { formatDay } from "@/lib/format";
 import { getServices } from "@/lib/server/services";
+import { AdminMfaGate } from "@/components/admin/admin-mfa-gate";
+import { getAdminAccess } from "@/lib/server/admin-page";
 
 export const metadata: Metadata = { title: "Customers" };
 
 const COLS = "md:grid-cols-[minmax(0,1.4fr)_minmax(0,1.4fr)_8rem_7rem_7rem]";
 
-export default async function AdminCustomersPage({
+/** Checks admin access and two-step sign-in on every request, then shows the page. */
+export default async function Page(props: Parameters<typeof AdminCustomersPage>[0]) {
+  const access = await getAdminAccess();
+  if (access.state === "needs_mfa") return <AdminMfaGate access={access} />;
+  return AdminCustomersPage(props);
+}
+
+async function AdminCustomersPage({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string; show?: string }>;

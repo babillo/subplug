@@ -7,6 +7,8 @@ import { Badge } from "@/components/admin/bits";
 import { type EditableProduct, PriceEditor, ProductToggle } from "@/components/admin/price-editor";
 import { Card, Notice, PageTitle } from "@/components/ui";
 import { getServices } from "@/lib/server/services";
+import { AdminMfaGate } from "@/components/admin/admin-mfa-gate";
+import { getAdminAccess } from "@/lib/server/admin-page";
 
 export const metadata: Metadata = { title: "Products & prices" };
 
@@ -14,7 +16,14 @@ type Product = Awaited<ReturnType<typeof listProductsAdmin>>[number];
 
 const COLS = "md:grid-cols-[minmax(0,1.5fr)_6.5rem_6.5rem_6.5rem_6.5rem_4rem_4.5rem]";
 
-export default async function AdminProductsPage() {
+/** Checks admin access and two-step sign-in on every request, then shows the page. */
+export default async function Page() {
+  const access = await getAdminAccess();
+  if (access.state === "needs_mfa") return <AdminMfaGate access={access} />;
+  return AdminProductsPage();
+}
+
+async function AdminProductsPage() {
   const products = await listProductsAdmin(getServices().db);
   const networks = [...new Set(products.map((p) => p.network))].sort(
     (a, b) => NETWORKS.findIndex((n) => n.id === a) - NETWORKS.findIndex((n) => n.id === b),

@@ -363,6 +363,23 @@ export function createAuthService(config: AuthConfig) {
       return row?.user ?? null;
     },
 
+    /** Like getSessionUser, plus the session's id (admin two-step approval is per session). */
+    async getSession(token: string): Promise<{ user: User; sessionId: string } | null> {
+      if (!token) return null;
+      const [row] = await db
+        .select({ user: users, sessionId: sessions.id })
+        .from(sessions)
+        .innerJoin(users, eq(users.id, sessions.userId))
+        .where(
+          and(
+            eq(sessions.tokenHash, hashToken(token)),
+            gt(sessions.expiresAt, sql`now()`),
+            eq(users.status, "active"),
+          ),
+        );
+      return row ?? null;
+    },
+
     async signOut(token: string): Promise<void> {
       await db.delete(sessions).where(eq(sessions.tokenHash, hashToken(token)));
     },

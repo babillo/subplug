@@ -5,6 +5,8 @@ import { AuditEntries } from "@/components/admin/audit-entries";
 import { FilterTabs, ShowMore } from "@/components/admin/bits";
 import { Card, PageTitle } from "@/components/ui";
 import { getServices } from "@/lib/server/services";
+import { AdminMfaGate } from "@/components/admin/admin-mfa-gate";
+import { getAdminAccess } from "@/lib/server/admin-page";
 
 export const metadata: Metadata = { title: "Audit log" };
 
@@ -17,7 +19,14 @@ const FILTERS = [
   { id: "user", label: "Customers" },
 ] as const;
 
-export default async function AdminAuditPage({
+/** Checks admin access and two-step sign-in on every request, then shows the page. */
+export default async function Page(props: Parameters<typeof AdminAuditPage>[0]) {
+  const access = await getAdminAccess();
+  if (access.state === "needs_mfa") return <AdminMfaGate access={access} />;
+  return AdminAuditPage(props);
+}
+
+async function AdminAuditPage({
   searchParams,
 }: {
   searchParams: Promise<{ type?: string; show?: string }>;

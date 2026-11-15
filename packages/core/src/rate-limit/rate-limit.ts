@@ -25,6 +25,8 @@ export const RATE_LIMITS = {
   ordersPerUser: { limit: 10, windowSeconds: 60 },
   /** Creating funding accounts (each one calls Monnify) by one customer. */
   fundingAccountsPerUser: { limit: 5, windowSeconds: 24 * 60 * 60 },
+  /** Two-step sign-in code attempts by one admin (a 6-digit code has a million options). */
+  adminMfaPerUser: { limit: 5, windowSeconds: 10 * 60 },
   /** Changes made by one admin. */
   adminActionsPerAdmin: { limit: 60, windowSeconds: 60 },
 } as const satisfies Record<string, RateLimitRule>;

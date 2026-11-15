@@ -5,6 +5,8 @@ import { FilterTabs, ShowMore } from "@/components/admin/bits";
 import { AdminOrderRows } from "@/components/admin/order-rows";
 import { Button, Card, PageTitle } from "@/components/ui";
 import { getServices } from "@/lib/server/services";
+import { AdminMfaGate } from "@/components/admin/admin-mfa-gate";
+import { getAdminAccess } from "@/lib/server/admin-page";
 
 export const metadata: Metadata = { title: "Orders" };
 
@@ -16,7 +18,14 @@ const FILTERS = [
   { id: "failed", label: "Failed" },
 ] as const;
 
-export default async function AdminOrdersPage({
+/** Checks admin access and two-step sign-in on every request, then shows the page. */
+export default async function Page(props: Parameters<typeof AdminOrdersPage>[0]) {
+  const access = await getAdminAccess();
+  if (access.state === "needs_mfa") return <AdminMfaGate access={access} />;
+  return AdminOrdersPage(props);
+}
+
+async function AdminOrdersPage({
   searchParams,
 }: {
   searchParams: Promise<{ status?: string; phone?: string; show?: string }>;

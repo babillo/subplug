@@ -77,11 +77,12 @@ Mobile (`apps/mobile/.env.local`, not secret, built into the app): `EXPO_PUBLIC_
 - Sessions: own implementation (no auth library). Random 256-bit token; only its SHA-256 is stored; 30 days. Web: HttpOnly `session` cookie (SameSite=Lax, Secure in prod) + Origin check on state-changing cookie requests. Mobile: `Authorization: Bearer`, token returned in the sign-in body only with header `x-client: mobile`.
 - Transaction PIN: 4 digits (no 0000/1234-style), bcrypt via `bcryptjs` (works on Cloudflare Workers). 5 wrong tries (counted in the DB under a row lock) locks purchases until reset with a `pin_reset` code. `buy()` checks the PIN before any money moves.
 - Seed user dev PIN: `1357` (test data only).
-- Admins: `users.role` = `admin`, granted only with `pnpm admin:grant <email|phone>` (laptop, audited; no web route). Admin API under `/api/admin/*`; every change audited in the same transaction. Admin 2FA comes in step 8.
+- Admins: `users.role` = `admin`, granted only with `pnpm admin:grant <email|phone>` (laptop, audited; no web route). Admin API under `/api/admin/*`; every change audited in the same transaction. Admins also need two-step sign-in (step 8b, below).
 - SMS provider: BulkSMSNigeria was cheapest on paper (₦6.49) but has poor reviews (delivery complaints) → rejected. Shortlist Termii (OTP/DND route, price on request) and VTpass Messaging; test delivery to DND numbers on MTN/Airtel/Glo before committing.
 
 ## Hardening (step 8)
 - **Rate limits** (8a): counted in Postgres (`rate_limits` table, one atomic upsert per request; no extra service). All limits in one place: `packages/core/src/rate-limit/rate-limit.ts` (`RATE_LIMITS`, placeholders): sign-in codes 10/hour per IP, sign-in attempts 20/10 min per IP, purchases 10/min per customer, funding-account creation 5/day per customer, admin changes 60/min per admin (GETs not limited). Over the limit → HTTP 429 `rate_limited` + `Retry-After` + "Too many attempts. Please try again in N minutes." IP = Cloudflare's `cf-connecting-ip` in production (can't be faked); on the laptop all requests share one bucket unless `x-forwarded-for` is sent. Old rows: `cleanupRateLimits()` (wired into the jobs command in 8c).
+- **Admin two-step sign-in** (8b): authenticator-app codes (TOTP, RFC 6238; own ~40-line implementation in `packages/core/src/auth/totp.ts`, tested with the RFC's values). First visit to `/admin` → setup (QR code via `qrcode`, or type the key) → confirm a code → 10 one-time backup codes shown once. Each session is approved for 12 hours (`sessions.mfa_verified_at`); `requireAdmin` (API) and every admin page check it. A code can't be reused (`users.totp_last_step`, checked under a row lock). Secret stored AES-256-GCM-encrypted (key derived from `AUTH_SECRET`); backup codes as HMACs. 5 code tries per 10 min. Lost phone: `pnpm admin:reset-2fa <email|phone> ["reason"]` (laptop only, audited). Changing `AUTH_SECRET` breaks existing setups (they'd need a reset).
 - **Security headers** (8a, `apps/web/next.config.ts`): CSP (self only; `'unsafe-inline'` scripts still allowed because Next and the theme script are inline; a nonce would remove it but forces per-request rendering), `frame-ancestors 'none'` + `X-Frame-Options: DENY`, `nosniff`, strict referrer, no camera/mic/location, HSTS in production, no `X-Powered-By`.
 
 ## Setup
@@ -112,5 +113,5 @@ Mobile (`apps/mobile/.env.local`, not secret, built into the app): `EXPO_PUBLIC_
 5. Auth (phone/email OTP) + transaction PIN ✅ (dev code sender; real SMS/email provider still to pick)
 6. Web dashboard + admin panel: 6a backend API ✅ (customer views, admin actions, audit); 6b customer UI (moodboard from Dribbble/Behance-style references, owner redesigns in Figma later); 6c admin UI
 7. Expo mobile app ✅ (customer app in Expo Go: sign-in, PIN, buy, fund, history, settings; store builds with EAS, biometrics and push notifications later)
-8. Hardening: 8a rate limits + security headers ✅; 8b admin 2FA; 8c monitoring
+8. Hardening: 8a rate limits + security headers ✅; 8b admin 2FA ✅; 8c monitoring
 9. Phase 2: cable, electricity, reseller tier, referrals

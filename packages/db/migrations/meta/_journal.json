@@ -50,6 +50,13 @@
       "when": 1794738619862,
       "tag": "0006_rate_limits",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794739206124,
+      "tag": "0007_admin_2fa",
+      "breakpoints": true
     }
   ]
 }
