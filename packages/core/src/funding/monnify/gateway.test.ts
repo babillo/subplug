@@ -100,6 +100,20 @@ describe("authentication", () => {
     expect((error as Error).message).toContain("Invalid credentials");
   });
 
+  it("shows the reply and the address called when Monnify's message is missing", async () => {
+    const fetchFn = fakeFetch({
+      status: 401,
+      body: { status: 401, error: "Unauthorized", path: "/api/v1/auth/login" },
+    });
+    const error = await gatewayWith(fetchFn)
+      .getReservedAccount("user-1")
+      .catch((e: unknown) => e);
+    const message = (error as Error).message;
+    expect(message).toContain('reply={"status":401,"error":"Unauthorized"');
+    expect(message).toContain("called=sandbox.monnify.com/api/v1/auth/login");
+    expectNoSecrets(error);
+  });
+
   it("describes an empty sign-in reply (who answered, what kind)", async () => {
     const fetchFn = fakeFetch({ status: 401, raw: "" });
     const error = await gatewayWith(fetchFn)
