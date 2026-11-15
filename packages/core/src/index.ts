@@ -32,3 +32,7 @@ export * from "./auth/types.ts";
 export * from "./account/account.ts";
 export * from "./admin/admin.ts";
 export * from "./rate-limit/rate-limit.ts";
+export * from "./monitoring/errors.ts";
+export * from "./monitoring/jobs.ts";
+export * from "./monitoring/status.ts";
+export * from "./monitoring/health.ts";

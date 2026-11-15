@@ -20,6 +20,7 @@
     "db:seed": "pnpm --filter @repo/core seed",
     "db:studio": "pnpm --filter @repo/db studio",
     "vtpass:check": "pnpm --filter @repo/core vtpass:check",
+    "jobs:run": "pnpm --filter @repo/core jobs:run",
     "orders:recheck": "pnpm --filter @repo/core orders:recheck",
     "orders:try": "pnpm --filter @repo/core orders:try",
     "funding:account": "pnpm --filter @repo/core funding:account",
