@@ -24,6 +24,8 @@ export class FakeGateway implements FundingGateway {
   readonly accountPayments = new Map<string, string[]>();
   /** Set to make verifyPayment throw (gateway down). */
   verifyError: Error | null = null;
+  /** Set to make listAccountPayments throw (e.g. sign-in refused). */
+  listError: Error | null = null;
   /** The only signature the fake accepts. */
   readonly goodSignature = "good-signature";
 
@@ -93,6 +95,7 @@ export class FakeGateway implements FundingGateway {
   }
 
   async listAccountPayments(accountReference: string): Promise<string[]> {
+    if (this.listError) throw this.listError;
     return this.accountPayments.get(accountReference) ?? [];
   }
 }

@@ -87,6 +87,32 @@ describe.skipIf(!hasTestDatabase)("monitoring (real PostgreSQL)", { timeout: 60_
       });
     });
 
+    it("marks a job failed when it finished but hit errors (e.g. Monnify refused sign-in)", async () => {
+      const gateway = new FakeGateway();
+      gateway.listError = new Error("Monnify sign-in failed (HTTP 401)");
+      const [user] = await db.insert(schema.users).values({ fullName: "Ada" }).returning();
+      await db.insert(schema.wallets).values({ userId: user!.id });
+      await db.insert(schema.fundingAccounts).values({
+        userId: user!.id,
+        gateway: "monnify",
+        accountReference: user!.id,
+        bankCode: "035",
+        bankName: "Wema",
+        accountNumber: "5000000001",
+        accountName: "Ada",
+      });
+      const [result] = await runJobs({
+        db,
+        getProvider: () => new RichProvider(),
+        getFundingGateway: () => gateway,
+        only: ["funding.reconcile"],
+        now: () => now,
+      });
+      expect(result).toMatchObject({ job: "funding.reconcile", ok: false });
+      expect(result!.error).toMatch(/1 error/);
+      expect(result!.summary).toMatchObject({ errors: 1 });
+    });
+
     it("can run just one job", async () => {
       const results = await runJobs({
         db,

@@ -100,11 +100,18 @@ export async function runJobs(deps: {
     const t0 = Date.now();
     let result: JobResult;
     try {
+      const summary = await work[name]();
+      // A job can finish but still hit errors (e.g. Monnify refused sign-in for every
+      // account). That must show as Failed, not OK.
+      const errors = typeof summary.errors === "number" ? summary.errors : 0;
       result = {
         job: name,
-        ok: true,
-        summary: await work[name](),
-        error: null,
+        ok: errors === 0,
+        summary,
+        error:
+          errors === 0
+            ? null
+            : `Finished with ${errors} error${errors === 1 ? "" : "s"}. Details in the Worker logs.`,
         ms: Date.now() - t0,
       };
     } catch (error) {
