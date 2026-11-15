@@ -98,6 +98,29 @@ describe("classifyVtpassResponse: failed (safe to refund)", () => {
   });
 });
 
+describe("classifyVtpassResponse: requery refused is not a failed order", () => {
+  // A re-check that VTpass refuses (bad or expired keys, IP not allowed, account issue) tells us
+  // nothing about the order: it may have been delivered. Refunding then could pay twice.
+  it("keeps the order pending when VTpass rejects our keys on requery", () => {
+    expect(requery("Invalid Credentials.", 401)).toBe("pending");
+    expect(requery({ message: "Forbidden" }, 403)).toBe("pending");
+    expect(requery({ code: "087", message: "INVALID CREDENTIALS" })).toBe("pending");
+  });
+
+  it("keeps it pending for account- or request-level refusals on requery", () => {
+    for (const code of ["021", "022", "023", "024", "027", "085"]) {
+      expect(requery({ code }), code).toBe("pending");
+    }
+  });
+
+  it("still fails it when VTpass says the transaction itself failed", () => {
+    expect(requery({ code: "016", response_description: "TRANSACTION FAILED" })).toBe("failed");
+    expect(requery({ code: "000", content: { transactions: { status: "reversed" } } })).toBe(
+      "failed",
+    );
+  });
+});
+
 describe("classifyVtpassResponse: details", () => {
   it("returns the provider code and description for logging", () => {
     const result = classifyVtpassResponse({
