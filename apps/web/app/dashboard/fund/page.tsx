@@ -6,7 +6,7 @@ import { Card, PageTitle } from "@/components/ui";
 import { requireUser } from "@/lib/server/current-user";
 import { getServices } from "@/lib/server/services";
 
-import { CopyButton } from "./copy-button";
+import { AccountCards } from "./account-cards";
 import { CreateAccountForm } from "./create-account-form";
 
 export const metadata: Metadata = { title: "Fund wallet" };
@@ -24,20 +24,7 @@ export default async function FundPage() {
       />
       {accounts.length > 0 ? (
         <>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {accounts.map((a) => (
-              <Card key={a.accountNumber} className="grid gap-1 border-dashed">
-                <div className="flex items-center justify-between text-sm text-muted">
-                  <span>{a.bankName}</span>
-                  <CopyButton text={a.accountNumber} />
-                </div>
-                <div className="num font-display text-2xl font-semibold tracking-wider">
-                  {a.accountNumber}
-                </div>
-                <div className="text-sm text-muted">{a.accountName}</div>
-              </Card>
-            ))}
-          </div>
+          <AccountCards accounts={accounts} />
           <Card className="grid gap-2 text-sm text-muted">
             <p>Send any amount. It usually arrives within minutes.</p>
             <p>

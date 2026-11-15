@@ -5,12 +5,25 @@ import { useState } from "react";
 import { Button, Notice, TextField } from "@/components/ui";
 import { api, ApiError } from "@/lib/client/api";
 
+import { AccountCards, type AccountView } from "./account-cards";
+
 export function CreateAccountForm() {
   const router = useRouter();
   const [kind, setKind] = useState<"bvn" | "nin">("bvn");
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** The new account numbers, shown straight from the reply. */
+  const [created, setCreated] = useState<AccountView[] | null>(null);
+
+  if (created) {
+    return (
+      <div className="grid gap-3">
+        <Notice tone="ok">Your account number is ready. Transfer to it from any bank app.</Notice>
+        <AccountCards accounts={created} />
+      </div>
+    );
+  }
 
   return (
     <form
@@ -20,7 +33,7 @@ export function CreateAccountForm() {
         setBusy(true);
         setError(null);
         try {
-          const result = await api<{ accounts?: unknown[] }>("/api/wallet/funding-accounts", {
+          const result = await api<{ accounts?: AccountView[] }>("/api/wallet/funding-accounts", {
             [kind]: value,
           });
           if (!result.accounts?.length) {
@@ -29,6 +42,9 @@ export function CreateAccountForm() {
             );
             return;
           }
+          // Show them right away from the reply; the page refresh then catches up in the
+          // background (and doesn't matter if it's slow).
+          setCreated(result.accounts);
           router.refresh();
         } catch (err) {
           setError((err as ApiError).message);
