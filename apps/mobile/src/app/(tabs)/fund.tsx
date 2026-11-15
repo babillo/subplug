@@ -103,7 +103,15 @@ function CreateAccount({ onCreated }: { onCreated: () => void }) {
     setBusy(true);
     setError(null);
     try {
-      await api("/api/wallet/funding-accounts", { [kind]: value });
+      const result = await api<{ accounts?: unknown[] }>("/api/wallet/funding-accounts", {
+        [kind]: value,
+      });
+      if (!result.accounts?.length) {
+        setError(
+          "We couldn’t get your account number just now. Please try again in a few minutes.",
+        );
+        return;
+      }
       onCreated();
     } catch (e) {
       setError((e as ApiError).message);
