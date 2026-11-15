@@ -5,8 +5,12 @@
 import { getServices } from "@/lib/server/services";
 import { badRequest, errorResponse, readJson, str } from "@/lib/server/responses";
 import { sessionCookie, userView } from "@/lib/server/session";
+import { RATE_LIMITS } from "@repo/core";
+import { clientIp, rateLimited } from "@/lib/server/rate-limit";
 
 export async function POST(request: Request) {
+  const limited = await rateLimited(`sign-in:ip:${clientIp(request)}`, RATE_LIMITS.signInPerIp);
+  if (limited) return limited;
   const body = await readJson(request);
   const destination = str(body?.destination);
   const code = str(body?.code);
