@@ -21,10 +21,16 @@
   --warn-soft: #fdf1dc;
   --bad: #c42b2b;
   --bad-soft: #fde7e7;
+  color-scheme: light;
 }
 
+/*
+  Dark colours apply when the visitor chose Dark in Settings (data-theme="dark" on <html>), or
+  when they left it on System and their device is in dark mode. Light is the default.
+  The two dark blocks must stay identical (CSS can't share one block between them).
+*/
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --ink: #1b2d4b;
     --cobalt: #6d8dff;
     --cobalt-strong: #8aa3ff;
@@ -42,6 +48,25 @@
     --bad-soft: #3a1717;
     color-scheme: dark;
   }
+}
+
+:root[data-theme="dark"] {
+  --ink: #1b2d4b;
+  --cobalt: #6d8dff;
+  --cobalt-strong: #8aa3ff;
+  --cobalt-soft: #1c2a52;
+  --paper: #0c1424;
+  --card: #121d32;
+  --line: #22314d;
+  --muted: #9aa8c0;
+  --fg: #e8eef8;
+  --ok: #4cc883;
+  --ok-soft: #12301f;
+  --warn: #f0b04d;
+  --warn-soft: #33260d;
+  --bad: #ff7a7a;
+  --bad-soft: #3a1717;
+  color-scheme: dark;
 }
 
 @theme inline {

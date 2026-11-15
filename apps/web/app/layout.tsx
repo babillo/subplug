@@ -19,9 +19,23 @@ export const viewport: Viewport = {
   ],
 };
 
+/**
+ * Applies the saved theme (Settings → Appearance) before the page is drawn, so there is no
+ * flash of the wrong colours. "system" (or nothing saved) leaves it to the device.
+ */
+const THEME_SCRIPT = `try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-NG" className={`${manrope.variable} ${jakarta.variable} h-full antialiased`}>
+    <html
+      lang="en-NG"
+      className={`${manrope.variable} ${jakarta.variable} h-full antialiased`}
+      // The theme script may add data-theme before React loads; that difference is expected.
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="min-h-full">{children}</body>
     </html>
   );
