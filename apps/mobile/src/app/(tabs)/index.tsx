@@ -8,13 +8,15 @@ import { OrderList } from "@/components/lists";
 import { Card, Loading, Notice, Screen, T } from "@/components/ui";
 import { useUser } from "@/lib/auth";
 import { useColors } from "@/lib/theme";
-import { useApi } from "@/lib/use-api";
+import { BALANCE_POLL_MS, useApi } from "@/lib/use-api";
 
 export default function HomeScreen() {
   const user = useUser();
   const c = useColors();
-  const wallet = useApi<{ balanceKobo: number }>("/api/wallet");
-  const orders = useApi<{ orders: OrderSummary[] }>("/api/orders?limit=5");
+  const wallet = useApi<{ balanceKobo: number }>("/api/wallet", { pollMs: BALANCE_POLL_MS });
+  const orders = useApi<{ orders: OrderSummary[] }>("/api/orders?limit=5", {
+    pollMs: BALANCE_POLL_MS,
+  });
   const firstName = user.fullName.split(" ")[0] ?? user.fullName;
 
   return (
