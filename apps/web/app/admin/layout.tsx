@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 
 import { AdminNav } from "@/components/admin/admin-nav";
-import { getCurrentUser } from "@/lib/server/current-user";
+import { MfaGate } from "@/components/admin/mfa-gate";
+import { getAdminAccess } from "@/lib/server/admin-page";
 
 export const dynamic = "force-dynamic";
 
@@ -13,11 +13,22 @@ export const metadata: Metadata = {
 
 /**
  * Admins only. Everyone else (signed out, customers, suspended admins) gets "not found", so the
- * panel's existence isn't advertised. The API routes check again on every request.
+ * panel's existence isn't advertised. Admins must also pass two-step sign-in (12 hours per
+ * device). The API routes check both again on every request.
  */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "admin" || user.status !== "active") notFound();
+  const access = await getAdminAccess();
+  const user = access.user;
+  if (access.state === "needs_mfa") {
+    return (
+      <main className="min-h-dvh px-4 sm:px-6">
+        <MfaGate
+          enrolled={access.enrolled}
+          firstName={user.fullName.split(" ")[0] ?? user.fullName}
+        />
+      </main>
+    );
+  }
 
   return (
     <div className="lg:flex lg:min-h-dvh">

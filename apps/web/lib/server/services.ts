@@ -2,7 +2,9 @@
 // Never import this from a client component: it holds database and API credentials.
 // Each service is created on first use, so a missing setting only breaks the routes that need it.
 import {
+  type AdminMfa,
   type AuthService,
+  createAdminMfa,
   createAuthService,
   createMonnifyGatewayFromEnv,
   createOtpSenderFromEnv,
@@ -12,12 +14,14 @@ import {
   getAuthSecret,
 } from "@repo/core";
 import { createDb, type Database } from "@repo/db";
+import { brand } from "@repo/shared";
 
 type Services = {
   db: Database;
   auth: () => AuthService;
   purchases: () => ReturnType<typeof createPurchaseService>;
   fundingGateway: () => FundingGateway;
+  adminMfa: () => AdminMfa;
 };
 
 let services: Services | undefined;
@@ -28,6 +32,7 @@ export function getServices(): Services {
     let auth: AuthService | undefined;
     let purchases: ReturnType<typeof createPurchaseService> | undefined;
     let gateway: FundingGateway | undefined;
+    let adminMfa: AdminMfa | undefined;
     const getAuth = () =>
       (auth ??= createAuthService({
         db,
@@ -44,6 +49,8 @@ export function getServices(): Services {
           verifyPin: getAuth().verifyPin,
         })),
       fundingGateway: () => (gateway ??= createMonnifyGatewayFromEnv()),
+      adminMfa: () =>
+        (adminMfa ??= createAdminMfa({ db, secret: getAuthSecret(), issuer: brand.name })),
     };
   }
   return services;

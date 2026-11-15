@@ -7,8 +7,17 @@ import { AdminOrderRows } from "@/components/admin/order-rows";
 import { Card, Notice, PageTitle } from "@/components/ui";
 import { formatDay } from "@/lib/format";
 import { getServices } from "@/lib/server/services";
+import { AdminMfaGate } from "@/components/admin/admin-mfa-gate";
+import { getAdminAccess } from "@/lib/server/admin-page";
 
-export default async function AdminOverviewPage() {
+/** Checks admin access and two-step sign-in on every request, then shows the page. */
+export default async function Page() {
+  const access = await getAdminAccess();
+  if (access.state === "needs_mfa") return <AdminMfaGate access={access} />;
+  return AdminOverviewPage();
+}
+
+async function AdminOverviewPage() {
   const { db } = getServices();
   const [o, recent] = await Promise.all([getAdminOverview(db), listOrdersAdmin(db, { limit: 8 })]);
   const plural = (n: number, word: string) =>

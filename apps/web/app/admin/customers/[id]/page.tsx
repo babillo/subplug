@@ -14,6 +14,8 @@ import { Card } from "@/components/ui";
 import { formatDay } from "@/lib/format";
 import { getCurrentUser } from "@/lib/server/current-user";
 import { getServices } from "@/lib/server/services";
+import { AdminMfaGate } from "@/components/admin/admin-mfa-gate";
+import { getAdminAccess } from "@/lib/server/admin-page";
 
 export const metadata: Metadata = { title: "Customer" };
 
@@ -23,7 +25,14 @@ const TABS = [
   { id: "audit", label: "Admin changes" },
 ] as const;
 
-export default async function AdminCustomerPage({
+/** Checks admin access and two-step sign-in on every request, then shows the page. */
+export default async function Page(props: Parameters<typeof AdminCustomerPage>[0]) {
+  const access = await getAdminAccess();
+  if (access.state === "needs_mfa") return <AdminMfaGate access={access} />;
+  return AdminCustomerPage(props);
+}
+
+async function AdminCustomerPage({
   params,
   searchParams,
 }: {

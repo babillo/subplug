@@ -49,10 +49,17 @@ export function getSessionToken(
 
 /** The signed-in user, or null. */
 export async function getSignedInUser(request: Request): Promise<User | null> {
+  return (await getSignedInSession(request))?.user ?? null;
+}
+
+/** The signed-in user and their session id, or null. */
+export async function getSignedInSession(
+  request: Request,
+): Promise<{ user: User; sessionId: string } | null> {
   const session = getSessionToken(request);
   if (!session) return null;
   if (session.via === "cookie" && isCrossSite(request)) return null;
-  return getServices().auth().getSessionUser(session.token);
+  return getServices().auth().getSession(session.token);
 }
 
 export function unauthorized(): Response {
@@ -87,15 +94,43 @@ export function userView(user: User) {
 }
 
 /**
- * The signed-in admin, or a ready-made 401/403 response. Usage:
+ * A signed-in admin who may not have passed two-step sign-in yet: only for the two-step routes
+ * themselves (setting it up, entering a code). Everything else uses requireAdmin.
+ */
+export async function requireAdminSignedIn(
+  request: Request,
+): Promise<{ user: User; sessionId: string } | Response> {
+  const signedIn = await getSignedInSession(request);
+  if (!signedIn) return unauthorized();
+  if (signedIn.user.role !== "admin") {
+    return Response.json(
+      { error: { code: "forbidden", message: "Admins only." } },
+      { status: 403 },
+    );
+  }
+  return signedIn;
+}
+
+/**
+ * The signed-in admin, or a ready-made 401/403/429 response. Admins must also have passed
+ * two-step sign-in on this session in the last 12 hours. Usage:
  *   const admin = await requireAdmin(request); if (admin instanceof Response) return admin;
  */
 export async function requireAdmin(request: Request): Promise<User | Response> {
-  const user = await getSignedInUser(request);
-  if (!user) return unauthorized();
-  if (user.role !== "admin") {
+  const signedIn = await requireAdminSignedIn(request);
+  if (signedIn instanceof Response) return signedIn;
+  const { user, sessionId } = signedIn;
+  const mfa = await getServices().adminMfa().status(user.id, sessionId);
+  if (!mfa.verified) {
     return Response.json(
-      { error: { code: "forbidden", message: "Admins only." } },
+      {
+        error: {
+          code: "mfa_required",
+          message: mfa.enrolled
+            ? "Enter the code from your authenticator app at /admin first."
+            : "Set up two-step sign-in at /admin first.",
+        },
+      },
       { status: 403 },
     );
   }
