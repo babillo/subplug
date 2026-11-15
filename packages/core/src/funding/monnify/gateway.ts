@@ -292,16 +292,26 @@ export class MonnifyGateway implements FundingGateway {
     // When the reply isn't Monnify's usual JSON, note a few harmless facts about it (who
     // answered, what kind of reply, any redirect) so the error shows whether it was Monnify or
     // something in front of it, e.g. a firewall. Never anything we sent.
-    const about = envelope
-      ? null
-      : [
-          text ? null : "empty reply",
-          `type=${response.headers.get("content-type") ?? "none"}`,
-          `server=${response.headers.get("server") ?? "unknown"}`,
-          response.redirected ? `redirected to ${safeHost(response.url)}` : null,
-        ]
-          .filter(Boolean)
-          .join(", ");
+    const about = [
+      envelope
+        ? // Monnify's usual format but without its message: show the reply itself (a failed
+          // reply holds no secrets; successful ones never reach an error).
+          envelope.responseMessage
+          ? null
+          : `reply=${JSON.stringify(envelope).slice(0, 200)}`
+        : [
+            text ? null : "empty reply",
+            `type=${response.headers.get("content-type") ?? "none"}`,
+            `server=${response.headers.get("server") ?? "unknown"}`,
+            response.redirected ? `redirected to ${safeHost(response.url)}` : null,
+          ]
+            .filter(Boolean)
+            .join(", "),
+      // Where we sent it (address only, never keys), to catch a wrong MONNIFY_BASE_URL.
+      `called=${safeHostAndPath(`${this.baseUrl}${path}`)}`,
+    ]
+      .filter(Boolean)
+      .join("; ");
     return {
       ok,
       httpStatus: response.status,
@@ -340,6 +350,16 @@ export class MonnifyGateway implements FundingGateway {
       gatewayCode: response.envelope?.responseCode ?? null,
       raw: response.envelope ?? response.text,
     });
+  }
+}
+
+/** Host and path of a URL (no query), e.g. "sandbox.monnify.com/api/v1/auth/login". */
+function safeHostAndPath(url: string): string {
+  try {
+    const u = new URL(url);
+    return `${u.host}${u.pathname}`;
+  } catch {
+    return "an invalid address";
   }
 }
 
