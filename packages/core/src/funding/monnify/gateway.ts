@@ -289,17 +289,36 @@ export class MonnifyGateway implements FundingGateway {
       envelope = null;
     }
     const ok = response.ok && envelope?.requestSuccessful !== false;
+    // When the reply isn't Monnify's usual JSON, note a few harmless facts about it (who
+    // answered, what kind of reply, any redirect) so the error shows whether it was Monnify or
+    // something in front of it, e.g. a firewall. Never anything we sent.
+    const about = envelope
+      ? null
+      : [
+          text ? null : "empty reply",
+          `type=${response.headers.get("content-type") ?? "none"}`,
+          `server=${response.headers.get("server") ?? "unknown"}`,
+          response.redirected ? `redirected to ${safeHost(response.url)}` : null,
+        ]
+          .filter(Boolean)
+          .join(", ");
     return {
       ok,
       httpStatus: response.status,
       envelope,
       text: envelope ? null : text.slice(0, 500),
+      about,
     };
   }
 
   #error(
     message: string,
-    response: { httpStatus: number; envelope: Envelope | null; text: string | null },
+    response: {
+      httpStatus: number;
+      envelope: Envelope | null;
+      text: string | null;
+      about?: string | null;
+    },
   ): FundingGatewayError {
     // Say what Monnify actually answered (never anything we sent, which holds the keys):
     // its own message when it used its usual format, otherwise a short plain-text snippet.
@@ -312,13 +331,24 @@ export class MonnifyGateway implements FundingGateway {
             .trim()
             .slice(0, 120)
         : "");
-    const detail = `HTTP ${response.httpStatus}${said ? `: ${said}` : ""}`;
+    const detail = [`HTTP ${response.httpStatus}${said ? `: ${said}` : ""}`, response.about]
+      .filter(Boolean)
+      .join("; ");
     return new FundingGatewayError(`${message} (${detail})`, {
       gateway: GATEWAY,
       httpStatus: response.httpStatus,
       gatewayCode: response.envelope?.responseCode ?? null,
       raw: response.envelope ?? response.text,
     });
+  }
+}
+
+/** Just the host of a URL (e.g. "sandbox.monnify.com"), for error messages. */
+function safeHost(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return "an unknown address";
   }
 }
 

@@ -100,6 +100,15 @@ describe("authentication", () => {
     expect((error as Error).message).toContain("Invalid credentials");
   });
 
+  it("describes an empty sign-in reply (who answered, what kind)", async () => {
+    const fetchFn = fakeFetch({ status: 401, raw: "" });
+    const error = await gatewayWith(fetchFn)
+      .getReservedAccount("user-1")
+      .catch((e: unknown) => e);
+    expect((error as Error).message).toMatch(/HTTP 401; empty reply, type=.*, server=/);
+    expectNoSecrets(error);
+  });
+
   it("explains a sign-in reply that isn't Monnify's usual format (e.g. a block page)", async () => {
     const fetchFn = fakeFetch({
       status: 403,
