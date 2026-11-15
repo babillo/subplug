@@ -43,6 +43,13 @@
       "when": 1794670128840,
       "tag": "0005_user_role",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794738619862,
+      "tag": "0006_rate_limits",
+      "breakpoints": true
     }
   ]
 }
