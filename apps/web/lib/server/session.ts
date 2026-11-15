@@ -25,13 +25,20 @@ function cookieToken(request: Request): string | null {
   return null;
 }
 
-/** True when a cookie-authenticated, state-changing request comes from another site. */
+/**
+ * True when a cookie-authenticated, state-changing request comes from another site.
+ * The browser's Origin must match the address the browser sent the request to: the Host header
+ * (set by the browser; another site can't change it) or the server's own URL. Behind Cloudflare
+ * the URL the server sees can differ from the public one, hence the Host header too.
+ */
 function isCrossSite(request: Request): boolean {
   if (request.method === "GET" || request.method === "HEAD") return false;
   const origin = request.headers.get("origin");
   if (!origin) return false; // non-browser clients don't send Origin; browsers always do on POST
   try {
-    return new URL(origin).host !== new URL(request.url).host;
+    const originHost = new URL(origin).host;
+    const ourHosts = [new URL(request.url).host, request.headers.get("host")].filter(Boolean);
+    return !ourHosts.includes(originHost);
   } catch {
     return true;
   }
