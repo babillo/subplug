@@ -247,7 +247,7 @@ One-time setup:
    ```
 
 4. **Hyperdrive:** Cloudflare dashboard → Storage & Databases → Hyperdrive → **Create** → name
-   `sauritop-staging`, paste the same string. Send the ID to Claude (it isn't secret) to put in `apps/web/wrangler.jsonc`, or edit that line yourself.
+   `sauritop-staging`, paste the same string. Its ID goes in `apps/web/wrangler.jsonc` (`"id"`; not secret). Staging: `da52b6ae1ae848209d845e096346b0c2`.
 5. **Connect the repo:** Workers & Pages → Create → **Import a repository** → this GitHub repo:
    - Project name: `sauritop-staging` · Production branch: `main` · Root directory: (empty)
    - Build command: `pnpm --filter web cf:build`
