@@ -1,5 +1,12 @@
 // Shared JSON helpers for API routes.
-import { adminErrorResponse, authErrorResponse, purchaseErrorResponse } from "@repo/core";
+import {
+  adminErrorResponse,
+  authErrorResponse,
+  purchaseErrorResponse,
+  recordError,
+} from "@repo/core";
+
+import { getServices } from "./services";
 
 export async function readJson(request: Request): Promise<Record<string, unknown> | null> {
   try {
@@ -19,12 +26,25 @@ export function badRequest(message: string, fields?: Record<string, string>): Re
   );
 }
 
+/**
+ * Prints a server error and saves it for the admin System page. Never throws and never waits:
+ * logging must not break or slow the reply.
+ */
+export function logServerError(context: string, error: unknown): void {
+  console.error(`${context} failed`, error);
+  try {
+    void recordError(getServices().db, context, error);
+  } catch {
+    // No database at all: the console line above is all we can do.
+  }
+}
+
 /** Known auth/purchase errors → their HTTP answer; anything else → logged 500. */
 export function errorResponse(error: unknown, context: string): Response {
   const known =
     authErrorResponse(error) ?? purchaseErrorResponse(error) ?? adminErrorResponse(error);
   if (known) return Response.json(known.body, { status: known.status, headers: known.headers });
-  console.error(`${context} failed`, error);
+  logServerError(context, error);
   return Response.json(
     { error: { code: "server_error", message: "Something went wrong. Please try again." } },
     { status: 500 },

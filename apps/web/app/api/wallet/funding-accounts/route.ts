@@ -10,7 +10,7 @@ import {
 } from "@repo/core";
 
 import { getServices } from "@/lib/server/services";
-import { readJson, str } from "@/lib/server/responses";
+import { readJson, str, logServerError } from "@/lib/server/responses";
 import { getSignedInUser, unauthorized } from "@/lib/server/session";
 import { rateLimited } from "@/lib/server/rate-limit";
 
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
       );
     }
     if (error instanceof FundingGatewayError) {
-      console.error("Funding account creation failed at the gateway", error.message);
+      logServerError("POST /api/wallet/funding-accounts (Monnify)", error);
       return Response.json(
         {
           error: {
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
         { status: 502 },
       );
     }
-    console.error("POST /api/wallet/funding-accounts failed", error);
+    logServerError("POST /api/wallet/funding-accounts", error);
     return Response.json(
       { error: { code: "server_error", message: "Something went wrong." } },
       { status: 500 },
