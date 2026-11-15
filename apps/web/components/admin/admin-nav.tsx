@@ -10,6 +10,7 @@ const ITEMS = [
   { href: "/admin/orders", label: "Orders" },
   { href: "/admin/products", label: "Products & prices" },
   { href: "/admin/audit", label: "Audit log" },
+  { href: "/admin/system", label: "System" },
 ];
 
 const isActive = (pathname: string, href: string) =>

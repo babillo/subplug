@@ -4,6 +4,7 @@
 // Answers: 200 handled (Monnify stops resending), 401 bad signature, 500 please retry later.
 import { handleFundingWebhook } from "@repo/core";
 
+import { logServerError } from "@/lib/server/responses";
 import { getServices } from "@/lib/server/services";
 
 export async function POST(request: Request) {
@@ -19,9 +20,9 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     // e.g. MONNIFY_* settings missing: ask Monnify to retry once it's fixed.
-    console.error(
-      "Monnify webhook could not be processed",
-      error instanceof Error ? error.message : error,
+    logServerError(
+      "POST /api/webhooks/monnify (payment not credited yet; Monnify will retry)",
+      error,
     );
     return Response.json({ received: false }, { status: 500 });
   }

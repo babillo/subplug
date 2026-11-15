@@ -5,6 +5,7 @@ import {
   type AdminMfa,
   type AuthService,
   createAdminMfa,
+  type GetProvider,
   createAuthService,
   createMonnifyGatewayFromEnv,
   createOtpSenderFromEnv,
@@ -22,6 +23,8 @@ type Services = {
   purchases: () => ReturnType<typeof createPurchaseService>;
   fundingGateway: () => FundingGateway;
   adminMfa: () => AdminMfa;
+  /** VTpass etc. (created on first use; a missing key only breaks what needs it). */
+  getProvider: GetProvider;
 };
 
 let services: Services | undefined;
@@ -39,13 +42,15 @@ export function getServices(): Services {
         sender: createOtpSenderFromEnv(),
         secret: getAuthSecret(),
       }));
+    const getProvider = createProviderRegistry();
     services = {
       db,
+      getProvider,
       auth: getAuth,
       purchases: () =>
         (purchases ??= createPurchaseService({
           db,
-          getProvider: createProviderRegistry(),
+          getProvider,
           verifyPin: getAuth().verifyPin,
         })),
       fundingGateway: () => (gateway ??= createMonnifyGatewayFromEnv()),

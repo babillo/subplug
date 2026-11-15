@@ -5,6 +5,7 @@ export * from "./catalog.ts";
 export * from "./enums.ts";
 export * from "./funding.ts";
 export * from "./ledger.ts";
+export * from "./monitoring.ts";
 export * from "./orders.ts";
 export * from "./rate-limits.ts";
 export * from "./users.ts";

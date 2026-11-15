@@ -55,6 +55,12 @@ export const PENDING_CODES: Record<string, string> = {
   "015": "INVALID REQUEST ID",
 };
 
+/**
+ * On /requery, the only codes that say the order itself failed (so it's safe to refund).
+ * ("015" never received is handled separately, before this.)
+ */
+const REQUERY_FAILED_CODES = new Set(["016", "040", "091"]);
+
 /** Transaction statuses inside a code-000 response. */
 const SUCCESS_TX_STATUSES = new Set(["delivered"]);
 const FAILED_TX_STATUSES = new Set(["failed", "reversed"]);
@@ -96,9 +102,18 @@ export function classifyVtpassResponse({
 }: ClassifyInput): Classification {
   // Credentials rejected: the request was refused before anything happened.
   // (Real sandbox reply without valid keys: HTTP 401, body "Invalid Credentials.")
+  // On /pay that means nothing was bought: failed (refund). On /requery it only means we couldn't
+  // ask, so the order stays pending (refunding a delivered order would pay twice).
   if (httpStatus === 401 || httpStatus === 403) {
     const message = typeof body === "string" ? body : "Credentials rejected";
-    return { status: "failed", providerCode: null, message: `HTTP ${httpStatus}: ${message}` };
+    return {
+      status: operation === "requery" ? "pending" : "failed",
+      providerCode: null,
+      message:
+        operation === "requery"
+          ? `Couldn’t check with VTpass (HTTP ${httpStatus}: ${message})`
+          : `HTTP ${httpStatus}: ${message}`,
+    };
   }
 
   if (!isRecord(body)) {
@@ -129,6 +144,16 @@ export function classifyVtpassResponse({
       status: "failed",
       providerCode,
       message: description ?? "INVALID REQUEST ID (VTpass never received this request_id)",
+    };
+  }
+
+  // On /requery, only an answer about the transaction itself may fail an order. Anything else
+  // (bad keys, IP not allowed, account issues…) is VTpass refusing our question: keep it pending.
+  if (operation === "requery" && providerCode && !REQUERY_FAILED_CODES.has(providerCode)) {
+    return {
+      status: "pending",
+      providerCode,
+      message: `Couldn’t check with VTpass: ${description ?? FAILED_CODES[providerCode] ?? `code ${providerCode}`}`,
     };
   }
 

@@ -221,6 +221,19 @@ so run them on the laptop after `pnpm db:migrate` and `pnpm db:seed`. `orders:re
 run any time; it will be scheduled on Cloudflare later. Orders pending for over 24 hours are listed
 for a human to check, never refunded automatically.
 
+## Background jobs and monitoring
+
+```bash
+pnpm jobs:run
+```
+
+Runs every background job once and prints what each did: re-check pending orders with VTpass,
+check Monnify for payments we missed, and clean up old records. Name jobs to run only those, e.g.
+`pnpm jobs:run orders.recheck`. Each run is saved and shows on the admin **System** page
+(`/admin/system`), along with the VTpass balance against the money customers hold, the ledger
+check and recent server errors. Once hosted, a Cloudflare schedule runs the jobs every few
+minutes. `GET /api/health` answers 200 when the app and database are up (for an uptime checker).
+
 ## Signing in (API)
 
 Customers sign in with a one-time code sent to their phone or email; no passwords. In development
