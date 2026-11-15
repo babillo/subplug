@@ -37,6 +37,9 @@ export default async function Home() {
           )}
         </div>
       </div>
+      <footer className="text-sm text-muted">
+        © {new Date().getFullYear()} {brand.legalLine}.
+      </footer>
     </main>
   );
 }

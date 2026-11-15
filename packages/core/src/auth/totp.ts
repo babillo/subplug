@@ -100,7 +100,7 @@ export function otpauthUri(secretBase32: string, accountName: string, issuer: st
 // "v1:" + base64(12-byte nonce | ciphertext | 16-byte tag).
 
 function keyFrom(authSecret: string): Buffer {
-  return createHash("sha256").update(`subplug:totp-secret:${authSecret}`).digest();
+  return createHash("sha256").update(`admin-2fa:totp-secret:${authSecret}`).digest();
 }
 
 export function encryptSecret(plain: string, authSecret: string): string {

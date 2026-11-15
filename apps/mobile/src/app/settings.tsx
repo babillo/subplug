@@ -1,4 +1,5 @@
 // Account details, PIN changes and sign out.
+import { brand } from "@repo/shared";
 import { use, useState } from "react";
 import { View } from "react-native";
 
@@ -41,6 +42,9 @@ export default function SettingsScreen() {
       )}
       <Appearance />
       <Button title="Sign out" variant="danger" onPress={() => void signOut()} />
+      <T variant="caption" tone="muted" style={{ textAlign: "center" }}>
+        {brand.legalLine}.
+      </T>
     </Screen>
   );
 }

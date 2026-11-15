@@ -90,8 +90,8 @@ describe("generateTotpSecret / otpauthUri", () => {
   });
 
   it("builds the link authenticator apps scan", () => {
-    expect(otpauthUri("JBSWY3DPEHPK3PXP", "Ada Obi", "SubPlug")).toBe(
-      "otpauth://totp/SubPlug:Ada%20Obi?secret=JBSWY3DPEHPK3PXP&issuer=SubPlug&algorithm=SHA1&digits=6&period=30",
+    expect(otpauthUri("JBSWY3DPEHPK3PXP", "Ada Obi", "Sauritop")).toBe(
+      "otpauth://totp/Sauritop:Ada%20Obi?secret=JBSWY3DPEHPK3PXP&issuer=Sauritop&algorithm=SHA1&digits=6&period=30",
     );
   });
 });
