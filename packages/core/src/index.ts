@@ -22,6 +22,7 @@ export {
 } from "./funding/monnify/gateway.ts";
 export * from "./funding/types.ts";
 export * from "./funding/fees.ts";
+export * from "./auth/admin-mfa.ts";
 export * from "./auth/auth.ts";
 export * from "./auth/errors.ts";
 export * from "./auth/http.ts";

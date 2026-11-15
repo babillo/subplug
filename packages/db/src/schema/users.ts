@@ -23,6 +23,14 @@ export const users = pgTable("users", {
   pinFailedAttempts: integer().notNull().default(0),
   /** Set after 5 wrong PINs: purchases are blocked until the PIN is reset with a one-time code. */
   pinLockedAt: timestamp({ withTimezone: true }),
+  /**
+   * Admin two-step sign-in: the authenticator-app secret, encrypted with a key derived from
+   * AUTH_SECRET (never stored readable). Set when setup starts; active once totpEnabledAt is set.
+   */
+  totpSecretEnc: text(),
+  totpEnabledAt: timestamp({ withTimezone: true }),
+  /** The last 30-second step whose code was accepted: a code can't be used twice. */
+  totpLastStep: bigint({ mode: "number" }),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });

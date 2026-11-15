@@ -18,7 +18,8 @@
     "orders:try": "node --disable-warning=ExperimentalWarning src/scripts/try-order.ts",
     "funding:account": "node --disable-warning=ExperimentalWarning src/scripts/funding-account.ts",
     "funding:reconcile": "node --disable-warning=ExperimentalWarning src/scripts/reconcile-funding.ts",
-    "admin:grant": "node --disable-warning=ExperimentalWarning src/scripts/grant-admin.ts"
+    "admin:grant": "node --disable-warning=ExperimentalWarning src/scripts/grant-admin.ts",
+    "admin:reset-2fa": "node --disable-warning=ExperimentalWarning src/scripts/reset-admin-2fa.ts"
   },
   "dependencies": {
     "@repo/db": "workspace:*",
