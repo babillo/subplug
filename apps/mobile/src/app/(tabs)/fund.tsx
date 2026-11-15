@@ -8,12 +8,12 @@ import { Pressable, View } from "react-native";
 import { Button, Card, Field, Loading, Notice, Screen, Segmented, T } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
 import { useColors } from "@/lib/theme";
-import { useApi } from "@/lib/use-api";
+import { BALANCE_POLL_MS, useApi } from "@/lib/use-api";
 
 type Wallet = { balanceKobo: number; fundingFeeKobo: number; fundingAccounts: FundingAccount[] };
 
 export default function FundScreen() {
-  const wallet = useApi<Wallet>("/api/wallet");
+  const wallet = useApi<Wallet>("/api/wallet", { pollMs: BALANCE_POLL_MS });
   const w = wallet.data;
   return (
     <Screen refreshing={wallet.refreshing} onRefresh={() => void wallet.refresh()}>

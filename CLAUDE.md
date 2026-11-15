@@ -43,6 +43,7 @@ A wallet-based VTU (virtual top-up) platform for Nigeria. Users fund a wallet by
   - Learned from the real sandbox (differs from or isn't in the docs):
     - Profile → API Keys → **API authentication type** must be "All" or "API Keys". On "Basic", VTpass ignores the keys: HTTP 401 plain-text `"Invalid Credentials."`.
     - Products are off by default. Enable each one in Profile → **Product Settings** (sandbox and live separately), else code `028`.
+    - Only the test phone `08011111111` succeeds on the sandbox; any other number gets `016 TRANSACTION FAILED` (→ refund). Seen 2026-11-15 with 08111111111 and 08145464778. Always test purchases with `08011111111`.
     - Code `019` "likely duplicate": any new purchase to the **same recipient within 15 seconds**, whatever the service (docs say 30s, same service). Not charged → failed → refund. The purchase flow should tell customers to wait ~15s, not just show "failed".
     - The status mapping and the codes still unconfirmed are documented in `packages/core/src/providers/vtpass/status-map.ts`.
 - **Wallet funding:** **Monnify sandbox now** (reserved accounts, behind the `FundingGateway` adapter in `packages/core/src/funding/`); **Paystack later** as a second adapter. Flutterwave ruled out (fees). Going live with any gateway needs a CAC-registered business + KYC.

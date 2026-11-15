@@ -16,7 +16,7 @@ import { ApiError, api } from "@/lib/api";
 import { useUser } from "@/lib/auth";
 import { newClientReference } from "@/lib/reference";
 import { fonts, useColors } from "@/lib/theme";
-import { useApi } from "@/lib/use-api";
+import { BALANCE_POLL_MS, useApi } from "@/lib/use-api";
 
 type Mode = "data" | "airtime";
 const AIRTIME_PRESETS = [100, 200, 500, 1000, 2000, 5000];
@@ -27,7 +27,7 @@ export default function BuyScreen() {
   const params = useLocalSearchParams<{ mode?: string }>();
   const mode: Mode = params.mode === "airtime" ? "airtime" : "data";
   const products = useApi<{ products: CatalogItem[] }>("/api/products");
-  const wallet = useApi<{ balanceKobo: number }>("/api/wallet");
+  const wallet = useApi<{ balanceKobo: number }>("/api/wallet", { pollMs: BALANCE_POLL_MS });
 
   return (
     <Screen
