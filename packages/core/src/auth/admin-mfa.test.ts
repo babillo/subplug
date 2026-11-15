@@ -29,7 +29,7 @@ describe.skipIf(!hasTestDatabase)(
       clock = new Date("2026-11-15T10:00:00Z");
     });
 
-    const mfa = () => createAdminMfa({ db, secret: SECRET, issuer: "SubPlug", now: () => clock });
+    const mfa = () => createAdminMfa({ db, secret: SECRET, issuer: "Sauritop", now: () => clock });
 
     async function adminWithSession() {
       const [user] = await db
@@ -76,7 +76,7 @@ describe.skipIf(!hasTestDatabase)(
 
       const { secret, uri } = await mfa().startSetup(a.userId);
       expect(uri).toContain(`secret=${secret}`);
-      expect(uri).toContain("issuer=SubPlug");
+      expect(uri).toContain("issuer=Sauritop");
       // The stored secret is encrypted, never readable.
       const [row] = await db.select().from(schema.users).where(eq(schema.users.id, a.userId));
       expect(row!.totpSecretEnc).toMatch(/^v1:/);

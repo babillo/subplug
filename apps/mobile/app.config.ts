@@ -16,8 +16,12 @@ const config: ExpoConfig = {
   userInterfaceStyle: "automatic",
   ios: {
     icon: "./assets/expo.icon",
+    // The app's permanent ID in the App Store (can't change after the first release).
+    bundleIdentifier: "com.sauritop.app",
   },
   android: {
+    // The app's permanent ID in Google Play (can't change after the first release).
+    package: "com.sauritop.app",
     adaptiveIcon: {
       backgroundColor: "#E6F4FE",
       foregroundImage: "./assets/images/android-icon-foreground.png",

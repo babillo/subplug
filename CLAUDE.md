@@ -1,6 +1,6 @@
-# SubPlug — VTU Platform
+# Sauritop — VTU Platform
 
-Working name: **SubPlug** (may change; keep the brand name in one config file, never hard-coded).
+Brand: **Sauritop** (sauritop.com), "Sauritop is a brand of M-Salman Ventures". Renamed from the earlier working name on 2026-11-16 (another company used it). Keep the brand in one config file, never hard-coded: `packages/shared/src/brand.json` (name, tagline, legal line, domain, support email). App store IDs: `com.sauritop.app` (iOS and Android). The GitHub repo and folder names still use the old name for now.
 
 A wallet-based VTU (virtual top-up) platform for Nigeria. Users fund a wallet by bank transfer or card, then buy data, airtime, cable TV and electricity instantly. Web app + admin panel + Android/iOS app, sharing one backend.
 
@@ -93,7 +93,7 @@ Mobile (`apps/mobile/.env.local`, not secret, built into the app): `EXPO_PUBLIC_
 - **Env vars on my laptop** come from `.env.local` at the repo root (copy `.env.example`).
 - Real env vars win over `.env.local`.
 - Docker is not available in the cloud, so nothing may depend on it.
-- **Neon project:** "SubPlug project" (`nameless-poetry-89567642`). Development uses its `dev` branch, never `production`. Its `test` branch (endpoint `ep-little-violet-…`) is for `TEST_DATABASE_URL` on the laptop; tests wipe it. Ignore "my-first-project" (`broad-sunset-24732751`); it is unused.
+- **Neon project:** ID `nameless-poetry-89567642` (Sauritop's project). Development uses its `dev` branch, never `production`. Its `test` branch (endpoint `ep-little-violet-…`) is for `TEST_DATABASE_URL` on the laptop; tests wipe it. Ignore "my-first-project" (`broad-sunset-24732751`); it is unused.
 - **Cloud sessions cannot connect to Postgres directly** (their network only allows HTTPS, not raw TCP on port 5432). So:
   - Database work against Neon (migrations, seed, real sandbox purchases) runs on my laptop.
   - Automated DB tests in the cloud use a throwaway local PostgreSQL installed in the container, not Neon.

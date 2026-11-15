@@ -1,5 +1,5 @@
 {
-  "name": "subplug-monorepo",
+  "name": "sauritop-monorepo",
   "private": true,
   "packageManager": "pnpm@10.28.0",
   "engines": {

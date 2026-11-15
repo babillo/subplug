@@ -1,4 +1,4 @@
-# SubPlug
+# Sauritop
 
 A wallet-based VTU (virtual top-up) platform for Nigeria: fund a wallet, then buy data, airtime,
 cable TV and electricity. See [CLAUDE.md](./CLAUDE.md) for the project rules and roadmap.
@@ -33,10 +33,10 @@ results.
 
 ## Database: Neon
 
-Development uses the `dev` branch of the Neon project **"SubPlug project"**
-(`nameless-poetry-89567642`). The `production` branch stays untouched until launch.
+Development uses the `dev` branch of Sauritop's Neon project (ID `nameless-poetry-89567642`;
+the ID is in the project's address in the Neon console). The `production` branch stays untouched until launch.
 
-1. In the Neon console, open "SubPlug project", click **Connect**, pick the `dev` branch, and copy
+1. In the Neon console, open the project `nameless-poetry-89567642`, click **Connect**, pick the `dev` branch, and copy
    the connection string. It looks like
    `postgresql://USER:PASSWORD@ep-xxxx.REGION.aws.neon.tech/neondb?sslmode=require`.
 2. Use that string as `DATABASE_URL` in `.env.local` on your laptop. It contains a password: never
@@ -144,7 +144,7 @@ happen at once) only exists in a real database. They **delete all data** in that
 use `TEST_DATABASE_URL`, never `DATABASE_URL`, and refuse to run if the two are the same. Without
 `TEST_DATABASE_URL`, `pnpm test` skips them and prints a warning.
 
-- **Laptop:** create a separate Neon branch called `test` in "SubPlug project" and put its
+- **Laptop:** create a separate Neon branch called `test` in the same project and put its
   connection string in `.env.local` as `TEST_DATABASE_URL`. The tests create the tables themselves.
 - **Cloud:** install a throwaway local PostgreSQL in the session and point `TEST_DATABASE_URL` at it:
 
@@ -153,11 +153,11 @@ apt-get install -y postgresql && service postgresql start
 ```
 
 ```bash
-su postgres -c "psql -c \"create role subplug_test login password 'subplug_test'\"" && su postgres -c "createdb -O subplug_test subplug_test"
+su postgres -c "psql -c \"create role sauritop_test login password 'sauritop_test'\"" && su postgres -c "createdb -O sauritop_test sauritop_test"
 ```
 
 ```bash
-TEST_DATABASE_URL=postgres://subplug_test:subplug_test@localhost:5432/subplug_test pnpm test
+TEST_DATABASE_URL=postgres://sauritop_test:sauritop_test@localhost:5432/sauritop_test pnpm test
 ```
 
 `pnpm test` also runs the VTpass **sandbox** tests (real HTTP, no real money) when `VTPASS_API_KEY`

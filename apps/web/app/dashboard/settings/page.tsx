@@ -1,3 +1,4 @@
+import { brand } from "@repo/shared";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -54,6 +55,7 @@ export default async function SettingsPage() {
         </Link>
       )}
       <SignOut />
+      <p className="text-center text-xs text-muted">{brand.legalLine}.</p>
     </>
   );
 }

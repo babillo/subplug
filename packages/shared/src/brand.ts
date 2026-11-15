@@ -4,6 +4,10 @@ import brandJson from "./brand.json";
 export type Brand = {
   name: string;
   tagline: string;
+  /** Shown in footers: who is legally behind the brand. */
+  legalLine: string;
+  /** The main website domain, without https:// (e.g. for links and emails). */
+  domain: string;
   supportEmail: string;
 };
 
