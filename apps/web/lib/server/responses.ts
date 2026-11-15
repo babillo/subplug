@@ -6,7 +6,7 @@ import {
   recordError,
 } from "@repo/core";
 
-import { getServices } from "./services";
+import { finishInBackground, getServices } from "./services";
 
 export async function readJson(request: Request): Promise<Record<string, unknown> | null> {
   try {
@@ -33,7 +33,7 @@ export function badRequest(message: string, fields?: Record<string, string>): Re
 export function logServerError(context: string, error: unknown): void {
   console.error(`${context} failed`, error);
   try {
-    void recordError(getServices().db, context, error);
+    finishInBackground(recordError(getServices().db, context, error));
   } catch {
     // No database at all: the console line above is all we can do.
   }
