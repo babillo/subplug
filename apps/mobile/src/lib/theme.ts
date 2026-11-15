@@ -1,5 +1,6 @@
 // Design tokens: the same colours as the web app (apps/web/app/globals.css). Change both together;
 // the owner's Figma redesign replaces these values.
+import { createContext, use } from "react";
 import { useColorScheme } from "react-native";
 
 const light = {
@@ -42,8 +43,24 @@ const dark: typeof light = {
 
 export type Colors = typeof light;
 
+/** The customer's choice in Settings → Appearance. "system" follows the phone. */
+export type ThemePreference = "system" | "light" | "dark";
+
+export const ThemeContext = createContext<{
+  preference: ThemePreference;
+  setPreference: (preference: ThemePreference) => void;
+}>({ preference: "system", setPreference: () => undefined });
+
+/** "light" or "dark": the customer's choice, or the phone's setting when they chose System. */
+export function useScheme(): "light" | "dark" {
+  const device = useColorScheme();
+  const { preference } = use(ThemeContext);
+  if (preference !== "system") return preference;
+  return device === "dark" ? "dark" : "light";
+}
+
 export function useColors(): Colors {
-  return useColorScheme() === "dark" ? dark : light;
+  return useScheme() === "dark" ? dark : light;
 }
 
 /** Font family per weight (custom fonts need one family per weight on Android). */

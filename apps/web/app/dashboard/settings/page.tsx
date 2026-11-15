@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { ThemePicker } from "@/components/theme-picker";
 import { Card, PageTitle } from "@/components/ui";
 import { requireUser } from "@/lib/server/current-user";
 
@@ -39,6 +40,11 @@ export default async function SettingsPage() {
           </Card>
         </>
       )}
+      <Card className="grid gap-3">
+        <h2 className="font-display text-lg font-semibold">Appearance</h2>
+        <p className="text-sm text-muted">System follows your phone or computer’s setting.</p>
+        <ThemePicker />
+      </Card>
       {user.role === "admin" && user.status === "active" && (
         <Link
           href="/admin"

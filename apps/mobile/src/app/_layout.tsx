@@ -12,21 +12,25 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 
 import { AuthProvider, useAuth } from "@/lib/auth";
-import { fonts, useColors } from "@/lib/theme";
+import { ThemeProvider } from "@/lib/theme-provider";
+import { fonts, useColors, useScheme } from "@/lib/theme";
 
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <AppStack />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AppStack />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
 function AppStack() {
   const { state } = useAuth();
   const c = useColors();
+  const scheme = useScheme();
   const [fontsLoaded, fontError] = useFonts({
     Manrope_500Medium,
     Manrope_600SemiBold,
@@ -45,7 +49,7 @@ function AppStack() {
 
   return (
     <>
-      <StatusBar style="auto" />
+      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
       <Stack
         screenOptions={{
           headerShadowVisible: false,

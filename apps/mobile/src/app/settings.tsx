@@ -1,11 +1,12 @@
 // Account details, PIN changes and sign out.
-import { useState } from "react";
+import { use, useState } from "react";
 import { View } from "react-native";
 
 import { PinPad } from "@/components/pin-pad";
-import { Button, Card, Field, Notice, Screen, T } from "@/components/ui";
+import { Button, Card, Field, Notice, Screen, Segmented, T } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
 import { useAuth, useUser } from "@/lib/auth";
+import { ThemeContext, type ThemePreference } from "@/lib/theme";
 
 export default function SettingsScreen() {
   const user = useUser();
@@ -38,8 +39,31 @@ export default function SettingsScreen() {
           </Card>
         </>
       )}
+      <Appearance />
       <Button title="Sign out" variant="danger" onPress={() => void signOut()} />
     </Screen>
+  );
+}
+
+function Appearance() {
+  const { preference, setPreference } = use(ThemeContext);
+  return (
+    <Card>
+      <T variant="heading">Appearance</T>
+      <T variant="small" tone="muted">
+        System follows your phone’s setting.
+      </T>
+      <Segmented<ThemePreference>
+        label="Appearance"
+        value={preference}
+        onChange={setPreference}
+        options={[
+          { id: "system", label: "System" },
+          { id: "light", label: "Light" },
+          { id: "dark", label: "Dark" },
+        ]}
+      />
+    </Card>
   );
 }
 
