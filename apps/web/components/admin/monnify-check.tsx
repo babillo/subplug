@@ -5,7 +5,13 @@ import { useState } from "react";
 import { Button, Notice } from "@/components/ui";
 import { api, ApiError } from "@/lib/client/api";
 
-type Result = { ok: boolean; colo: string | null; ms: number; error?: string };
+type Result = {
+  ok: boolean;
+  colo: string | null;
+  ms: number;
+  error?: string;
+  fingerprint?: string[];
+};
 
 export function MonnifyCheck() {
   const [result, setResult] = useState<Result | null>(null);
@@ -48,6 +54,19 @@ export function MonnifyCheck() {
             Monnify sign-in failed{where}: {result.error}
           </Notice>
         ))}
+      {result?.fingerprint && (
+        <div className="grid gap-1 text-sm">
+          <p className="text-muted">
+            Key fingerprint (never the keys). Compare with <code>pnpm monnify:fingerprint</code> on
+            your laptop: the same code means the same keys.
+          </p>
+          <ul className="font-mono text-xs">
+            {result.fingerprint.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

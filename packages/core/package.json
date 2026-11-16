@@ -20,6 +20,7 @@
     "funding:account": "node --disable-warning=ExperimentalWarning src/scripts/funding-account.ts",
     "funding:reconcile": "node --disable-warning=ExperimentalWarning src/scripts/reconcile-funding.ts",
     "admin:grant": "node --disable-warning=ExperimentalWarning src/scripts/grant-admin.ts",
+    "monnify:fingerprint": "node --disable-warning=ExperimentalWarning src/scripts/monnify-fingerprint.ts",
     "admin:reset-2fa": "node --disable-warning=ExperimentalWarning src/scripts/reset-admin-2fa.ts"
   },
   "dependencies": {

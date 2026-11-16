@@ -26,6 +26,7 @@
     "funding:account": "pnpm --filter @repo/core funding:account",
     "funding:reconcile": "pnpm --filter @repo/core funding:reconcile",
     "admin:grant": "pnpm --filter @repo/core admin:grant",
+    "monnify:fingerprint": "pnpm --filter @repo/core monnify:fingerprint",
     "admin:reset-2fa": "pnpm --filter @repo/core admin:reset-2fa",
     "deploy:staging": "pnpm --filter web deploy:staging",
     "cf:preview": "pnpm --filter web cf:preview"
